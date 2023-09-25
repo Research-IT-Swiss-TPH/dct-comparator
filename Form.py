@@ -1,4 +1,13 @@
 import pandas as pd
+import Levenshtein
+
+def get_normalized_edit_distance(s1, s2):
+    try:
+        edit_distance = Levenshtein.distance(s1, s2)
+        edit_distance /= max(len(s1), len(s2))
+    except:
+        edit_distance = 1.0
+    return edit_distance
 
 """The Form class is a Python class designed to represent and manipulate information related to XLSForm surveys. XLSForm is a standard format for authoring surveys in a spreadsheet format, often used in conjunction with data collection tools like ODK (Open Data Kit)."""
 
@@ -42,10 +51,13 @@ class Form:
         self._survey           = survey
 
         # Load questions
+        survey_df = survey_df.reset_index()
         questions = survey_df[survey_df["name"].notnull()]
         questions = questions[questions["type"] != "note"]
-        questions = questions[["type",
-                               "name"]]
+        questions = questions[["index",
+                               "type",
+                               "name",
+                               "label::English (en)"]]
         questions = questions.assign(group_id = "",
                                      group_lbl = "")
         group_ids = [0]
@@ -91,8 +103,8 @@ class Form:
     """This method takes another Form object (form) as an argument and compares various attributes of the current form with the attributes of the provided form.
     It returns a formatted string containing comparison results."""
     def compare(self, form):
-        out1 = self.compareVersion(form)
-        out2 = self.compareID(form)
+        out1 = self.compareID(form)
+        out2 = self.compareVersion(form)
         out = "{}\n{}".format(out1, out2)
         return out
     
@@ -122,7 +134,36 @@ class Form:
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].isnull() & out["type_y"].notnull()]
-        return out[["type_y", "name", "group_id_y", "group_lbl_y"]]
+        out = out.reset_index(drop = True)
+        out = out[["index_y",
+                   "name",
+                   "type_y",
+                   "label::English (en)_y",
+                   "group_id_y",
+                   "group_lbl_y"]].rename(columns = {"index_y": "row",
+                                                     "type_y": "type",
+                                                     "label::English (en)_y": "label",
+                                                     "group_id_y": "group_id",
+                                                     "group_lbl_y": "group_lbl"})
+        return out
+    
+    def modifiedLabel(self, f):
+        out = pd.merge(left = self._questions,
+                       right = f.getQuestions(),
+                       on = "name",
+                       how = 'inner')
+        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["label::English (en)_x"], s2 = row["label::English (en)_y"]), axis = 1)
+        out = out[(out["label::English (en)_x"].notnull()) & (out["edit_distance"] > 0.2)]
+        out = out.reset_index(drop = True)
+        out = out[["name",
+                   "index_x",
+                   "index_y",
+                   "label::English (en)_x",
+                   "label::English (en)_y"]].rename(columns = {"index_x": "row1",
+                                                               "index_y": "row2",
+                                                               "label::English (en)_x": "label1",
+                                                               "label::English (en)_y": "label2"})
+        return out
     
     def removedQuestions(self, f):
         out = pd.merge(left = self._questions,
@@ -130,7 +171,15 @@ class Form:
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].notnull() & out["type_y"].isnull()]
-        return out[["type_x", "name", "group_id_x", "group_lbl_x"]]
+        out = out.reset_index(drop = True)
+        out = out[["index_x",
+                   "type_x",
+                   "name",
+                   "label::English (en)_x",
+                   "group_id_x",
+                   "group_lbl_x"]].rename(columns = {"index_x": "row",
+                                                     "type_x": "type"})
+        return out
     
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
