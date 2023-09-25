@@ -31,14 +31,34 @@ class Form:
                  survey):
         
         survey_df   = pd.read_excel(in_xlsx, sheet_name="survey")
-        choices_df  = pd.read_excel(in_xlsx, sheet_name="survey")
+        choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
         settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
         
+        # General form attributes
         self._id               = settings_df.loc[0]["form_id"]
         self._title            = settings_df.loc[0]["form_title"]
         self._version          = settings_df.loc[0]["version"],
         self._default_language = settings_df.loc[0]["default_language"],
         self._survey           = survey
+
+        # Load questions
+        questions = survey_df[survey_df["name"].notnull()]
+        questions = questions[questions["type"] != "note"]
+        questions = questions[["type",
+                               "name"]]
+        questions = questions.assign(group_id = "",
+                                     group_lbl = "")
+        group_ids = [0]
+        for index, row in questions.iterrows():
+            if row["type"] == "begin_group":
+                group_ids.append(row["name"]) # Append the name to the list 'g'
+            elif row["type"] == "end_group":
+                if len(group_ids) > 1:
+                    group_ids = group_ids[:-1]
+            else:
+                questions.loc[index, "group_id"] = group_ids[-1]
+        questions = questions[(questions["type"] != "begin_group") & (questions["type"] != "end_group")]
+        self._questions = questions.reset_index(drop=True)
 
     # Instance Methods
     """This method returns the unique identifier of the form."""
@@ -61,6 +81,9 @@ class Form:
     def getSurvey(self):
         return self._survey
     
+    def getQuestions(self):
+        return self._questions
+    
     """This method is intended to return the parent of the form. However, the parent attribute (_parent) is not set within the class, so this method may not provide the expected functionality without additional implementation."""
     def getParent(self):
         return self._parent
@@ -74,8 +97,8 @@ class Form:
         return out
     
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
-    def compareVersion(self, form):
-        cver = form.getVersion()
+    def compareVersion(self, f):
+        cver = f.getVersion()
         out = ""
         if self._version != cver:
             out = "Versions are different: {} and {}".format(self._version, cver)
@@ -84,8 +107,8 @@ class Form:
         return out
     
     """This method compares the unique identifier attribute of the current form with the identifier attribute of the provided form. It returns a string indicating whether the form IDs are identical or different."""
-    def compareID(self, form):
-        cid = form.getID()
+    def compareID(self, f):
+        cid = f.getID()
         out = ""
         if self._id != cid:
             out = "Form IDs are different: {} and {}".format(self._id, cid)
@@ -93,6 +116,44 @@ class Form:
             out = "Form ID is identical: {}".format(self._id)
         return out
     
+    def addedQuestions(self, f):
+        out = pd.merge(left = self._questions,
+                       right = f.getQuestions(),
+                       on = "name",
+                       how = 'outer')
+        out = out[out["type_x"].isnull() & out["type_y"].notnull()]
+        return out[["type_y", "name", "group_id_y", "group_lbl_y"]]
+    
+    def removedQuestions(self, f):
+        out = pd.merge(left = self._questions,
+                       right = f.getQuestions(),
+                       on = "name",
+                       how = 'outer')
+        out = out[out["type_x"].notnull() & out["type_y"].isnull()]
+        return out[["type_x", "name", "group_id_x", "group_lbl_x"]]
+    
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
 """Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
+
+class ListAnswers:
+
+    def __init__(self,
+                 name):
+        self._name = name
+        
+    # Instance Methods
+    """This method returns the list name."""
+    def getName(self):
+        return self._name    
+
+class Answer:
+
+    def __init__(self,
+                 list_name):
+        self._list_name = list_name
+        
+    # Instance Methods
+    """This method returns the list name."""
+    def getListName(self):
+        return self._list_name    
