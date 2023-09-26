@@ -61,7 +61,8 @@ def process_label(s):
         # Remove question number
         s = re.sub(r'\w*[0-9]*.*[0-9]*\) ', '', s)
         # Remove punctuations and convert characters to lower case
-        s = "".join([char.lower() for char in s if char not in string.punctuation]).strip()
+        #s = "".join([char.lower() for char in s if char not in string.punctuation]).strip()
+        s = s.lower().replace(".", "").replace("?", "").replace("'", "").strip()
         # Remove stop words
         word_tokens = nltk.tokenize.word_tokenize(s)
         out = " ".join([w for w in word_tokens if not w in stop_words])
