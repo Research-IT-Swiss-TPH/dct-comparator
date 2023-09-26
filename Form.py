@@ -190,10 +190,10 @@ class Form:
             out = None
 
         if out is not None:
-            tmp1 = self._questions.copy(deep=True)
-            tmp1 = tmp1[tmp1["label::English (en)"].notnull()]
+            tmp = self._questions.copy(deep=True)
+            tmp = tmp[tmp["label::English (en)"].notnull()]
             out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp1[["index", "name", "label::English (en)"]],
+                                   tmp[["index", "name", "label::English (en)"]],
                                    left_on='label',
                                    right_on='label::English (en)',
                                    how='left',
@@ -269,12 +269,31 @@ class Form:
                    "group_lbl_x"]] \
                    .rename(columns = {"index_x": "row",
                                        "type_x": "type",
-                                       "label::English (en)_x": "label",
-                                       "group_id_x": "group_id",
-                                       "group_lbl_x": "group_lbl"}) \
+                                       "label::English (en)_x": "label"}) \
                    .astype({'row':'int'})
         if (out.shape[0] == 0):
             out = None
+
+        if out is not None:
+            tmp = f.getQuestions().copy(deep=True)
+            tmp = tmp[tmp["label::English (en)"].notnull()]
+            out = skrub.fuzzy_join(out[["row", "name", "label"]],
+                                   tmp[["index", "name", "label::English (en)"]],
+                                   left_on='label',
+                                   right_on='label::English (en)',
+                                   how='left',
+                                   match_score=0,
+                                   return_score=True)
+            out = out[["name_x",
+                    "label",
+                    "name_y",
+                    "label::English (en)",
+                    "matching_score"]] \
+                    .rename(columns = {"name_x": "name",
+                                        "name_y": "name_of_closest_lbl",
+                                        "label::English (en)": "closest_lbl"}) \
+                    .fillna("")
+
         return out
     
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
