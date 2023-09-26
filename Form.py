@@ -1,6 +1,21 @@
 import pandas as pd
+
+import string
 import Levenshtein
+import re
+import nltk
+nltk.download('punkt')
+nltk.download('stopwords')
+
 import skrub
+
+stop_words = set(nltk.corpus.stopwords.words('english'))
+stop_words.add("please")
+stop_words.add("specify")
+stop_words.discard("where")
+stop_words.discard("how")
+stop_words.discard("when")
+stop_words.discard("why")
 
 def get_normalized_edit_distance(s1, s2):
     try:
@@ -9,6 +24,51 @@ def get_normalized_edit_distance(s1, s2):
     except:
         edit_distance = 1.0
     return edit_distance
+
+def find_common_words(df, lbl_col):
+    full_text = ""
+    df = df[df[lbl_col].notnull()]
+    for index, row in df.iterrows():
+        full_text = full_text + " " + row[lbl_col]
+    allWords = nltk.tokenize.word_tokenize(full_text)
+    allWordDist = nltk.FreqDist(w.lower() for w in allWords)
+    mostCommon= allWordDist.most_common(10)
+    common_words = []
+    for item in mostCommon:
+        common_words.append(item[0])
+    return common_words
+
+def remove_common_words(df,
+                        lbl_col,
+                        common_words):
+
+    for index, row in df.iterrows():
+        sentence = row[lbl_col]
+        word_tokens = nltk.tokenize.word_tokenize(sentence)
+        filtered_sentence = " "
+        for w in word_tokens:
+            if w not in common_words:
+                filtered_sentence = filtered_sentence + " " + w
+        row[lbl_col] = filtered_sentence
+
+def process_label(s):
+
+    try:
+        # remove call to ODK variable
+        s = re.sub(r'[$]+{.*?}', '', s)
+        # remove HTML tags
+        s = re.sub(r'<.*?>', '', s)
+        # Remove question number
+        s = re.sub(r'\w*[0-9]*.*[0-9]*\) ', '', s)
+        # Remove punctuations and convert characters to lower case
+        s = "".join([char.lower() for char in s if char not in string.punctuation]).strip()
+        # Remove stop words
+        word_tokens = nltk.tokenize.word_tokenize(s)
+        out = " ".join([w for w in word_tokens if not w in stop_words])
+    except:
+        out = s
+
+    return out
 
 """The Form class is a Python class designed to represent and manipulate information related to XLSForm surveys. XLSForm is a standard format for authoring surveys in a spreadsheet format, often used in conjunction with data collection tools like ODK (Open Data Kit)."""
 
@@ -59,6 +119,7 @@ class Form:
                                "type",
                                "name",
                                "label::English (en)"]]
+        questions["label::English (en)"] = questions.apply(lambda row: process_label(row["label::English (en)"]), axis = 1)
         questions = questions.assign(group_id = "",
                                      group_lbl = "")
         group_ids = [0]
@@ -72,6 +133,9 @@ class Form:
                 questions.loc[index, "group_id"] = group_ids[-1]
         questions = questions[(questions["type"] != "begin_group") & (questions["type"] != "end_group")]
         self._questions = questions.reset_index(drop=True)
+
+        # Common words
+        self._common_words = find_common_words(self._questions, "label::English (en)")
 
     # Instance Methods
 
@@ -120,6 +184,10 @@ class Form:
     def getQuestions(self):
 
         return self._questions
+    
+    def getCommonWords(self):
+
+        return self._common_words
     
     """This method is intended to return the parent of the form. However, the parent attribute (_parent) is not set within the class, so this method may not provide the expected functionality without additional implementation."""
     
@@ -317,8 +385,8 @@ class Form:
                    "type_y"]] \
                    .rename(columns = {"index_x": "row1",
                                       "index_y": "row2",
-                                      "type_x": "label1",
-                                      "type_y": "label2"}) \
+                                      "type_x": "type1",
+                                      "type_y": "type2"}) \
                    .astype({'row1':'int', 'row2':'int'})
         if (out.shape[0] == 0):
             out = None
@@ -333,15 +401,23 @@ class Form:
         tmp2 = f.getQuestions()
         tmp2 = tmp2[tmp2["label::English (en)"].notnull()]
 
-        out = skrub.fuzzy_join(tmp1,
-                               tmp2,
-                               on = 'label::English (en)',
+        out = skrub.fuzzy_join(tmp1[["index", "name", "label::English (en)", "type"]],
+                               tmp2[["index", "name", "label::English (en)", "type"]],
+                               on='label::English (en)',
                                how='left',
                                match_score=0,
                                return_score=True)
         out = out[out["matching_score"] >= 0.6] \
+               .rename(columns = {"index_x": "row1",
+                                  "index_y": "row2",
+                                  "name_x": "name1",
+                                  "name_y": "name2",
+                                  "type_x": "type1",
+                                  "type_y": "type2",
+                                  "label::English (en)_x": "label1",
+                                  "label::English (en)_y": "label2"}) \
               .reset_index(drop=True) \
-              .sort_values(by=["matching_score", "index_x"],
+              .sort_values(by=["matching_score", "row1"],
                            ascending=[False, True])
             
         if (out.shape[0] == 0):
