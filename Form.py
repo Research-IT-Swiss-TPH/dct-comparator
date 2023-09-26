@@ -169,7 +169,7 @@ class Form:
             out = "Default language is identical: {}".format(self._default_language)
         return out
     
-    def addedQuestions(self, f):
+    def detectAddedQuestions(self, f):
 
         out = pd.merge(left = self._questions,
                        right = f.getQuestions(),
@@ -199,19 +199,66 @@ class Form:
                                    how='left',
                                    match_score=0,
                                    return_score=True)
-            out = out[["name_x",
-                    "label",
-                    "name_y",
-                    "label::English (en)",
-                    "matching_score"]] \
-                    .rename(columns = {"name_x": "name",
-                                        "name_y": "name_of_closest_lbl",
-                                        "label::English (en)": "closest_lbl"}) \
-                    .fillna("")
+            out = out[["row",
+                       "name_x",
+                      "label",
+                      "name_y",
+                      "label::English (en)",
+                      "matching_score"]] \
+                      .rename(columns = {"name_x": "name",
+                                         "name_y": "name_of_closest_lbl",
+                                         "label::English (en)": "closest_lbl"}) \
+                      .fillna("") \
+                      .reset_index(drop=True)
 
         return out
     
-    def modifiedLabel(self, f):
+    def detectDeletedQuestions(self, f):
+
+        out = pd.merge(left = self._questions,
+                       right = f.getQuestions(),
+                       on = "name",
+                       how = 'outer')
+        out = out[out["type_x"].notnull() & out["type_y"].isnull()]
+        out = out.reset_index(drop = True)
+        out = out[["index_x",
+                   "name",
+                   "type_x",
+                   "label::English (en)_x",
+                   "group_id_x",
+                   "group_lbl_x"]] \
+                   .rename(columns = {"index_x": "row",
+                                       "type_x": "type",
+                                       "label::English (en)_x": "label"}) \
+                   .astype({'row':'int'})
+        if (out.shape[0] == 0):
+            out = None
+
+        if out is not None:
+            tmp = f.getQuestions().copy(deep=True)
+            tmp = tmp[tmp["label::English (en)"].notnull()]
+            out = skrub.fuzzy_join(out[["row", "name", "label"]],
+                                   tmp[["index", "name", "label::English (en)"]],
+                                   left_on='label',
+                                   right_on='label::English (en)',
+                                   how='left',
+                                   match_score=0,
+                                   return_score=True)
+            out = out[["row",
+                       "name_x",
+                       "label",
+                       "name_y",
+                       "label::English (en)",
+                       "matching_score"]] \
+                        .rename(columns = {"name_x": "name",
+                                           "name_y": "name_of_closest_lbl",
+                                           "label::English (en)": "closest_lbl"}) \
+                        .fillna("") \
+                        .reset_index(drop=True)
+
+        return out
+    
+    def detectModifiedLabels(self, f):
 
         out = pd.merge(left = self._questions,
                        right = f.getQuestions(),
@@ -253,46 +300,52 @@ class Form:
 
         return major, minor
     
-    def removedQuestions(self, f):
+    def detectModifiedTypes(self, f):
 
         out = pd.merge(left = self._questions,
                        right = f.getQuestions(),
                        on = "name",
-                       how = 'outer')
-        out = out[out["type_x"].notnull() & out["type_y"].isnull()]
+                       how = 'inner')
+        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["type_x"], s2 = row["type_y"]), axis = 1)
+
+        out = out[(out["type_x"].notnull()) & (out["edit_distance"] > 0)]
         out = out.reset_index(drop = True)
-        out = out[["index_x",
-                   "name",
+        out = out[["name",
+                   "index_x",
                    "type_x",
-                   "label::English (en)_x",
-                   "group_id_x",
-                   "group_lbl_x"]] \
-                   .rename(columns = {"index_x": "row",
-                                       "type_x": "type",
-                                       "label::English (en)_x": "label"}) \
-                   .astype({'row':'int'})
+                   "index_y",
+                   "type_y"]] \
+                   .rename(columns = {"index_x": "row1",
+                                      "index_y": "row2",
+                                      "type_x": "label1",
+                                      "type_y": "label2"}) \
+                   .astype({'row1':'int', 'row2':'int'})
         if (out.shape[0] == 0):
             out = None
 
-        if out is not None:
-            tmp = f.getQuestions().copy(deep=True)
-            tmp = tmp[tmp["label::English (en)"].notnull()]
-            out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp[["index", "name", "label::English (en)"]],
-                                   left_on='label',
-                                   right_on='label::English (en)',
-                                   how='left',
-                                   match_score=0,
-                                   return_score=True)
-            out = out[["name_x",
-                    "label",
-                    "name_y",
-                    "label::English (en)",
-                    "matching_score"]] \
-                    .rename(columns = {"name_x": "name",
-                                        "name_y": "name_of_closest_lbl",
-                                        "label::English (en)": "closest_lbl"}) \
-                    .fillna("")
+        return out
+    
+    def detectSimilarLabels(self, f):
+            
+        tmp1 = self._questions.copy(deep=True)
+        tmp1 = tmp1[tmp1["label::English (en)"].notnull()]
+
+        tmp2 = f.getQuestions()
+        tmp2 = tmp2[tmp2["label::English (en)"].notnull()]
+
+        out = skrub.fuzzy_join(tmp1,
+                               tmp2,
+                               on = 'label::English (en)',
+                               how='left',
+                               match_score=0,
+                               return_score=True)
+        out = out[out["matching_score"] >= 0.6] \
+              .reset_index(drop=True) \
+              .sort_values(by=["matching_score", "index_x"],
+                           ascending=[False, True])
+            
+        if (out.shape[0] == 0):
+            out = None
 
         return out
     
