@@ -79,14 +79,14 @@ class Form:
     """_defaults (Class-level attribute): This dictionary defines default values for certain attributes of the Form class.
     Currently, it includes the key "survey" with a default value of None."""
     _defaults = {
-        "survey": None
+        "survey_type": None
     }
     
     # Constructor
     """The constructor initializes a new Form object with the provided parameters.
 
     in_xlsx (string): The path to the XLSForm spreadsheet file from which the survey information is read.
-    survey (string): A string representing the survey type, which is passed as an argument to the constructor.
+    survey_type (string): A string representing the survey type, which is passed as an argument to the constructor.
     
     Inside the constructor, the provided XLSForm file is read, and relevant survey information is extracted and stored as instance variables:
     
@@ -94,24 +94,43 @@ class Form:
     _label (string): The title or label of the form extracted from the XLSForm.
     _version (tuple): The version information extracted from the XLSForm.
     _default_language (tuple): The default language information extracted from the XLSForm.
-    _survey (object): The survey object passed as a parameter to the constructor.
+    _survey_type (object): The survey type object passed as a parameter to the constructor.
     
     It is important to ensure that the Form objects are properly initialized with the required survey information before using these comparison methods."""
     def __init__(self,
                  in_xlsx,
-                 survey):
+                 survey_type):
         
-        # Raw data from XLSForm
-        self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
-        self._choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
-        self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
+        # Read and import raw data from XLSForm
+        try:
+            self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
+        except:
+            self._survey_df = None
+            print ("No sheet survey found")
+        try:
+            self._choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
+        except:
+            self._choices_df = None
+            print ("No sheet choices found")
+        try:
+            self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
+        except:
+            self._settings_df = None
+            print ("No sheet settings found")
+        try:
+            self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
+        except:
+            self._entities_df = None
+            print ("No sheet entities found")
         
-        # General form attributes
+        # Extract general form attributes
         self._id               = self._settings_df.at[0, "form_id"]
         self._title            = self._settings_df.at[0, "form_title"]
         self._version          = self._settings_df.at[0, "version"]
         self._default_language = self._settings_df.at[0, "default_language"]
-        self._survey           = survey
+        self._label            = "::".join(x for x in ["label", self._default_language] if x)
+
+        self._survey_type      = survey_type
 
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
@@ -119,8 +138,8 @@ class Form:
         questions = questions[["index",
                                "type",
                                "name",
-                               "label::English (en)"]]
-        questions["label::English (en)"] = questions.apply(lambda row: process_label(row["label::English (en)"]), axis = 1)
+                               self._label]]
+        questions[self._label] = questions.apply(lambda row: process_label(row[self._label]), axis = 1)
         questions = questions.assign(group_id = "",
                                      group_lbl = "")
         group_ids = [0]
@@ -136,7 +155,7 @@ class Form:
         self._questions = questions.reset_index(drop=True)
 
         # Common words
-        self._common_words = find_common_words(self._questions, "label::English (en)")
+        self._common_words = find_common_words(self._questions, self._label)
 
     # Instance Methods
 
@@ -176,11 +195,17 @@ class Form:
 
         return self._default_language
     
+    """This method returns the main label information of the form."""
+
+    def getMainLabel(self):
+
+        return self._label
+    
     """This method returns the survey type associated with the form."""
 
-    def getSurvey(self):
+    def getSurveyType(self):
 
-        return self._survey
+        return self._survey_type
     
     def getQuestions(self):
 
@@ -240,8 +265,8 @@ class Form:
     
     def detectAddedQuestions(self, f):
 
-        out = pd.merge(left = self._questions,
-                       right = f.getQuestions(),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].isnull() & out["type_y"].notnull()]
@@ -249,10 +274,10 @@ class Form:
         out = out[["index_y",
                    "name",
                    "type_y",
-                   "label::English (en)_y"]] \
+                   "label_y"]] \
                     .rename(columns = {"index_y": "row",
                                        "type_y": "type",
-                                       "label::English (en)_y": "label"}) \
+                                       "label_y": "label"}) \
                     .astype({'row':'int'})
 
         if (out.shape[0] == 0):
@@ -260,11 +285,11 @@ class Form:
 
         if out is not None:
             tmp = self._questions.copy(deep=True)
-            tmp = tmp[tmp["label::English (en)"].notnull()]
+            tmp = tmp[tmp[self._label].notnull()]
             out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp[["index", "name", "label::English (en)"]],
+                                   tmp[["index", "name", self._label]],
                                    left_on='label',
-                                   right_on='label::English (en)',
+                                   right_on=self._label,
                                    how='left',
                                    match_score=0,
                                    return_score=True)
@@ -272,11 +297,11 @@ class Form:
                        "name_x",
                       "label",
                       "name_y",
-                      "label::English (en)",
+                      self._label,
                       "matching_score"]] \
                       .rename(columns = {"name_x": "name",
                                          "name_y": "name_of_closest_lbl",
-                                         "label::English (en)": "closest_lbl"}) \
+                                         self._label: "closest_lbl"}) \
                       .fillna("") \
                       .reset_index(drop=True)
 
@@ -284,8 +309,8 @@ class Form:
     
     def detectDeletedQuestions(self, f):
 
-        out = pd.merge(left = self._questions,
-                       right = f.getQuestions(),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].notnull() & out["type_y"].isnull()]
@@ -293,23 +318,23 @@ class Form:
         out = out[["index_x",
                    "name",
                    "type_x",
-                   "label::English (en)_x",
+                   "label_x",
                    "group_id_x",
                    "group_lbl_x"]] \
                    .rename(columns = {"index_x": "row",
                                        "type_x": "type",
-                                       "label::English (en)_x": "label"}) \
+                                       "label_x": "label"}) \
                    .astype({'row':'int'})
         if (out.shape[0] == 0):
             out = None
 
         if out is not None:
             tmp = f.getQuestions().copy(deep=True)
-            tmp = tmp[tmp["label::English (en)"].notnull()]
+            tmp = tmp[tmp[f.getMainLabel()].notnull()]
             out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp[["index", "name", "label::English (en)"]],
+                                   tmp[["index", "name", f.getMainLabel()]],
                                    left_on='label',
-                                   right_on='label::English (en)',
+                                   right_on=f.getMainLabel(),
                                    how='left',
                                    match_score=0,
                                    return_score=True)
@@ -317,11 +342,11 @@ class Form:
                        "name_x",
                        "label",
                        "name_y",
-                       "label::English (en)",
+                       f.getMainLabel(),
                        "matching_score"]] \
                         .rename(columns = {"name_x": "name",
                                            "name_y": "name_of_closest_lbl",
-                                           "label::English (en)": "closest_lbl"}) \
+                                           f.getMainLabel(): "closest_lbl"}) \
                         .fillna("") \
                         .reset_index(drop=True)
 
@@ -329,40 +354,40 @@ class Form:
     
     def detectModifiedLabels(self, f):
 
-        out = pd.merge(left = self._questions,
-                       right = f.getQuestions(),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
                        on = "name",
                        how = 'inner')
-        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["label::English (en)_x"], s2 = row["label::English (en)_y"]), axis = 1)
+        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), axis = 1)
 
         # Major modifications
-        major = out[(out["label::English (en)_x"].notnull()) & (out["edit_distance"] > 0.2)]
+        major = out[(out["label_x"].notnull()) & (out["edit_distance"] > 0.2)]
         major = major.reset_index(drop = True)
         major = major[["name",
                        "index_x",
-                       "label::English (en)_x",
+                       "label_x",
                        "index_y",
-                       "label::English (en)_y"]] \
+                       "label_y"]] \
                         .rename(columns = {"index_x": "row1",
                                            "index_y": "row2",
-                                           "label::English (en)_x": "label1",
-                                           "label::English (en)_y": "label2"}) \
+                                           "label_x": "label1",
+                                           "label_y": "label2"}) \
                         .astype({'row1':'int', 'row2':'int'})
         if (major.shape[0] == 0):
             major = None
         
         # Minor modifications
-        minor = out[(out["label::English (en)_x"].notnull()) & (out["edit_distance"] > 0) & (out["edit_distance"] <= 0.2)]
+        minor = out[(out["label_x"].notnull()) & (out["edit_distance"] > 0) & (out["edit_distance"] <= 0.2)]
         minor = minor.reset_index(drop = True)
         minor = minor[["name",
                        "index_x",
-                       "label::English (en)_x",
+                       "label_x",
                        "index_y",
-                       "label::English (en)_y"]] \
+                       "label_y"]] \
                         .rename(columns = {"index_x": "row1",
                                            "index_y": "row2",
-                                           "label::English (en)_x": "label1",
-                                           "label::English (en)_y": "label2"}) \
+                                           "label_x": "label1",
+                                           "label_y": "label2"}) \
                         .astype({'row1':'int', 'row2':'int'})
         if (minor.shape[0] == 0):
             minor = None
@@ -371,8 +396,8 @@ class Form:
     
     def detectModifiedTypes(self, f):
 
-        out = pd.merge(left = self._questions,
-                       right = f.getQuestions(),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
                        on = "name",
                        how = 'inner')
         out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["type_x"], s2 = row["type_y"]), axis = 1)
@@ -396,15 +421,15 @@ class Form:
     
     def detectSimilarLabels(self, f):
             
-        tmp1 = self._questions.copy(deep=True)
-        tmp1 = tmp1[tmp1["label::English (en)"].notnull()]
+        tmp1 = self._questions.copy(deep=True).rename(columns = {self._label: "label"})
+        tmp1 = tmp1[tmp1["label"].notnull()]
 
-        tmp2 = f.getQuestions()
-        tmp2 = tmp2[tmp2["label::English (en)"].notnull()]
+        tmp2 = f.getQuestions().rename(columns = {f.getMainLabel(): "label"})
+        tmp2 = tmp2[tmp2["label"].notnull()]
 
-        out = skrub.fuzzy_join(tmp1[["index", "name", "label::English (en)", "type"]],
-                               tmp2[["index", "name", "label::English (en)", "type"]],
-                               on='label::English (en)',
+        out = skrub.fuzzy_join(tmp1[["index", "name", "label", "type"]],
+                               tmp2[["index", "name", "label", "type"]],
+                               on='label',
                                how='left',
                                match_score=0,
                                return_score=True)
@@ -415,8 +440,8 @@ class Form:
                                   "name_y": "name2",
                                   "type_x": "type1",
                                   "type_y": "type2",
-                                  "label::English (en)_x": "label1",
-                                  "label::English (en)_y": "label2"}) \
+                                  "label_x": "label1",
+                                  "label_y": "label2"}) \
               .reset_index(drop=True) \
               .sort_values(by=["matching_score", "row1"],
                            ascending=[False, True])
