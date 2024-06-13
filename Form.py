@@ -71,7 +71,8 @@ def process_label(s):
 
     return out
 
-"""The Form class is a Python class designed to represent and manipulate information related to XLSForm surveys. XLSForm is a standard format for authoring surveys in a spreadsheet format, often used in conjunction with data collection tools like ODK (Open Data Kit)."""
+"""The Form class is a Python class designed to represent and manipulate information related to XLSForm surveys.
+XLSForm is a standard format for authoring surveys in a spreadsheet format, often used in conjunction with data collection tools like ODK."""
 
 class Form:
 
@@ -221,7 +222,7 @@ class Form:
 
         return self._parent
     
-    """This method takes another Form object (form) as an argument and compares various attributes of the current form with the attributes of the provided form.
+    """This method takes another Form object (f) as an argument and compares various attributes of the current form with the attributes of the provided form.
     It returns a formatted string containing comparison results."""
     def compare(self, f):
 
