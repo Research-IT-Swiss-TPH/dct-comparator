@@ -1,8 +1,8 @@
-# ODK XLSForm management
+# Data collection tool comparator
 
 ## Overview
 
-**ODK XLSForm Management** is a Python project designed to facilitate the analysis and comparison of XLSForm surveys. This project provides a set of Python classes to extract, process, and compare information from XLSForm survey tabs.
+**DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm and REDCap data collection tools. This project provides a set of Python classes to extract, process, and compare information from XLSForms and REDCap data dictionaries.
 
 ## Features
 
