@@ -1,5 +1,5 @@
 import pandas as pd
-
+import numpy as np
 import Levenshtein
 import re
 import nltk
@@ -126,7 +126,15 @@ class DataDic:
         self._forms      = self._df.groupby(["Form Name"])["Form Name"].count().to_frame(name = "N").reset_index().rename(columns = {"Form Name": "Forms"})
         self._vars       = self._df[self._df["Variable / Field Name"].notnull()].rename(columns = {"Variable / Field Name": "Variables",
                                                                                                    "Form Name": "Forms"})
+        
+        # Extract Personally Identifiable Information (PII)
         self._pii        = self._vars[self._vars["Identifier?"] == "y"]
+
+        # Extract mandatory variables
+        self._mandatory  = self._vars[self._vars["Required Field?"] == "y"]
+        
+        # Extract non-mandatory variables
+        self._nonmandatory  = self._vars[self._vars["Required Field?"] != "y"]
         
         # Extract statistics
         self._nforms     = len(self._forms)
@@ -153,6 +161,10 @@ class DataDic:
     def getNumForms(self):
 
         return self._nforms
+    
+    def getFormList(self):
+
+        return self._forms["Forms"].tolist()
 
     def printNumForms(self):
 
@@ -165,7 +177,23 @@ class DataDic:
     
     def getIdentifiers(self):
 
-        return self._pii[["Variables", "Forms", "Field Type", "Field Label"]]
+        return self._pii[["Forms", "Variables", "Field Label", "Field Type"]]
+    
+    def getRequired(self):
+
+        df = self._mandatory[["Forms", "Variables", "Branching Logic (Show field only if...)"]]
+        d = dict()
+        for k in self.getFormList():
+            d[k] = df[df["Forms"] == k]
+        return df, d
+    
+    def getNonRequired(self):
+
+        df = self._nonmandatory[["Forms", "Variables", "Branching Logic (Show field only if...)"]]
+        d = dict()
+        for k in self.getFormList():
+            d[k] = df[df["Forms"] == k]
+        return df, d
     
     def getCommonWords(self):
 
