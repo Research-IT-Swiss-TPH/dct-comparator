@@ -36,7 +36,7 @@ The project requires Python 3.10 to work and relies on the following Python libr
 
 Make sure to install these dependencies before using this code.
 
-## SCreenshots
+## Screenshots
 
 ![image](https://github.com/user-attachments/assets/7b3b00b0-dc2e-426e-b03a-a217d87e3d6d)
 
