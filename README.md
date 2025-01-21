@@ -35,3 +35,9 @@ The project requires Python 3.10 to work and relies on the following Python libr
 * skrub
 
 Make sure to install these dependencies before using this code.
+
+## SCreenshots
+
+![image](https://github.com/user-attachments/assets/7b3b00b0-dc2e-426e-b03a-a217d87e3d6d)
+
+![image](https://github.com/user-attachments/assets/77f5b5cc-6d62-4352-a866-6b1d2526142a)
