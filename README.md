@@ -10,9 +10,9 @@ The Form class represents an XLSForm survey and provides various methods to inte
 
 Key features of the Form class include:
 
-* Initialization: initialize a Form object by providing the path to the XLSForm spreadsheet file and a survey type.
-* Retrieve Survey Information: access survey-related information such as the form's unique identifier, title, version, default language, and survey type.
-* Retrieve Questions: obtain a DataFrame containing the survey questions, including attributes like question type, label, and group information.
+* Initialization: initialize a Form object by providing the path to the XLSForm spreadsheet file and a survey type (e.g., "SPA exit interview", "WHO verbal autopsy").
+* Retrieve form general information: access form-related information such as the form's unique identifier, title, version, default language, and survey type.
+* Retrieve questions: obtain a dataframe containing the survey questions, including attributes like question type, label, and group information.
 * Comparison: compare two Form objects to detect differences in form ID, version, and default language. Additionally, identify added, deleted, modified questions, and similar labels between two forms.
 
 ## DataDic class features (experimental)
