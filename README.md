@@ -39,6 +39,8 @@ Make sure to install these dependencies before using this code.
 
 A file `requirements.txt` is also available.
 
+## Installation
+
 ## Screenshots
 
 ![image](https://github.com/user-attachments/assets/7b3b00b0-dc2e-426e-b03a-a217d87e3d6d)

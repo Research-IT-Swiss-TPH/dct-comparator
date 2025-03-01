@@ -225,15 +225,55 @@ class Form:
 
         return self._parent
     
-    """This method takes another Form object (f) as an argument and compares various attributes of the current form with the attributes of the provided form.
-    It returns a formatted string containing comparison results."""
-    def compare(self, f):
+    def compare(self, f, output_xlsx = ""):
 
-        out1 = self.compareID(f)
-        out2 = self.compareVersion(f)
-        out3 = self.compareDefaultLanguage(f)
-        out = "{}\n{}\n{}".format(out1, out2, out3)
-        return out
+        """
+        This method takes another Form object (f) as an argument and compares various attributes of the current form with the attributes of the provided form.
+        It returns a formatted string containing comparison results.
+        """
+
+        # Perform comparisons
+        comparisons = [
+            self.compareID(f),
+            self.compareVersion(f),
+            self.compareDefaultLanguage(f)
+        ]
+
+        # Create formatted output string
+        formatted_output = ""# "\n".join(f"{comp_type}: {finding} {f1} {f2}" for comp_type, finding, f1, f2 in comparisons)
+
+       # Save results to an Excel file if requested
+        if output_xlsx:
+            output_dir = "outputs"
+            os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+
+            # Create DataFrame with required format
+            df = pd.DataFrame(comparisons, columns=["Variable", "Finding", "f1", "f2"])
+            output_path = os.path.join(output_dir, output_xlsx)
+
+            # Write to Excel with formatting
+            with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
+                df.to_excel(writer, sheet_name="settings", index=False)
+
+                # Access the workbook and worksheet
+                workbook = writer.book
+                worksheet = writer.sheets["settings"]
+
+                # Define formatting styles
+                green_format = workbook.add_format({"bg_color": "#C6EFCE", "font_color": "#006100"})  # Green
+                red_format = workbook.add_format({"bg_color": "#FFC7CE", "font_color": "#9C0006"})  # Red
+
+                # Apply formatting based on "Finding" column
+                for row in range(1, len(df) + 1):  # Skip header row
+                    finding = df.iloc[row - 1, 1]  # "Finding" column
+                    
+                    # Apply green for "identical", red for "different"
+                    cell_format = green_format if finding == "identical" else red_format
+                    
+                    # Apply color formatting to the entire row (Finding, f1, f2 columns)
+                    worksheet.set_row(row, None, cell_format)
+
+        return formatted_output
     
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
     def compareVersion(self, f):
@@ -241,9 +281,9 @@ class Form:
         cver = f.getVersion()
         out = ""
         if self._version != cver:
-            out = "Versions are different: {} and {}".format(self._version, cver)
+            out = ("version", "different", self._version, cver)#"Versions are different: {} and {}".format(self._version, cver)
         else:
-            out = "Version is identical: {}".format(self._version)
+            out = ("version", "identical", self._version, cver)#"Version is identical: {}".format(self._version)
         return out
     
     """This method compares the unique identifier attribute of the current form with the identifier attribute of the provided form. It returns a string indicating whether the form IDs are identical or different."""
@@ -252,9 +292,9 @@ class Form:
         cid = f.getID()
         out = ""
         if self._id != cid:
-            out = "Form IDs are different: {} and {}".format(self._id, cid)
+            out = ("form_id", "different", self._id, cid)#, "Form IDs are different: {} and {}".format(self._id, cid))
         else:
-            out = "Form ID is identical: {}".format(self._id)
+            out = ("form_id", "identical", self._id, cid)#, "Form ID is identical: {}".format(self._id))
         return out
     
     def compareDefaultLanguage(self, f):
@@ -262,9 +302,9 @@ class Form:
         cdl = f.getDefaultLanguage()
         out = ""
         if self._default_language != cdl:
-            out = "Default languages are different: {} and {}".format(self._default_language, cdl)
+            out = ("default_language", "different", self._default_language, cdl)#"Default languages are different: {} and {}".format(self._default_language, cdl)
         else:
-            out = "Default language is identical: {}".format(self._default_language)
+            out = ("default_language", "identical", self._default_language, cdl)#"Default language is identical: {}".format(self._default_language))
         return out
     
     def detectAddedQuestions(self, f):
@@ -458,6 +498,16 @@ class Form:
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
 """Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
+
+class XLSComparator:
+
+    def __init__(self,
+                 name):
+        self._name = name
+        
+    # Instance Methods
+    def getName(self):
+        return self._name    
 
 class ListAnswers:
 
