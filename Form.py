@@ -1,10 +1,11 @@
 import pandas as pd
-
+import os
 import string
 import Levenshtein
 import re
 import nltk
-nltk.download('punkt')
+nltk.download('punkt_tab')
+#nltk.download('punkt')
 nltk.download('stopwords')
 
 import skrub
@@ -101,28 +102,30 @@ class Form:
     def __init__(self,
                  in_xlsx,
                  survey_type):
+
+        print ("Create Form object from " + os.path.basename(in_xlsx))
         
         # Read and import raw data from XLSForm
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
         except:
             self._survey_df = None
-            print ("No sheet survey found")
+            print ("\t - Info: no survey sheet found")
         try:
             self._choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
         except:
             self._choices_df = None
-            print ("No sheet choices found")
+            print ("\t - Info: no choices sheet found")
         try:
             self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
         except:
             self._settings_df = None
-            print ("No sheet settings found")
+            print ("\t - Info: no settings sheet found")
         try:
             self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
         except:
             self._entities_df = None
-            print ("No sheet entities found")
+            print ("\t - Info: no entities sheet found")
         
         # Extract general form attributes
         self._id               = self._settings_df.at[0, "form_id"]
