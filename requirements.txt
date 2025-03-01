@@ -1,0 +1,48 @@
+asttokens @ file:///opt/conda/conda-bld/asttokens_1646925590279/work
+certifi==2025.1.31
+charset-normalizer==3.4.1
+click==8.1.8
+colorama @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/colorama_1729036581634/work
+contourpy==1.3.1
+cycler==0.12.1
+decorator @ file:///opt/conda/conda-bld/decorator_1643638310831/work
+executing @ file:///opt/conda/conda-bld/executing_1646925071911/work
+fonttools==4.56.0
+idna==3.10
+ipython @ file:///C:/b/abs_8eyhzleyrk/croot/ipython_1734548134403/work
+jedi @ file:///C:/b/abs_3a2kbnlclc/croot/jedi_1733987412687/work
+Jinja2==3.1.5
+joblib==1.4.2
+kiwisolver==1.4.8
+Levenshtein==0.26.1
+MarkupSafe==3.0.2
+matplotlib==3.10.1
+matplotlib-inline @ file:///C:/Users/dev-admin/buildout/croot/matplotlib-inline_1732914206474/work
+nltk==3.9.1
+numpy==2.2.3
+packaging==24.2
+pandas==2.2.3
+parso @ file:///C:/b/abs_834b4mj92b/croot/parso_1733963322289/work
+pillow==11.1.0
+prompt_toolkit @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/prompt-toolkit_1729096615940/work
+pure-eval @ file:///opt/conda/conda-bld/pure_eval_1646925070566/work
+Pygments @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/pygments_1729039250192/work
+pyparsing==3.2.1
+python-dateutil==2.9.0.post0
+pytz==2025.1
+RapidFuzz==3.12.1
+regex==2024.11.6
+requests==2.32.3
+scikit-learn==1.6.1
+scipy==1.15.2
+setuptools==75.8.0
+six @ file:///tmp/build/80754af9/six_1644875935023/work
+skrub==0.5.1
+stack-data @ file:///opt/conda/conda-bld/stack_data_1646927590127/work
+threadpoolctl==3.5.0
+tqdm==4.67.1
+traitlets @ file:///C:/Users/dev-admin/perseverance-python-buildout/croot/traitlets_1729038154689/work
+tzdata==2025.1
+urllib3==2.3.0
+wcwidth @ file:///Users/ktietz/demo/mc3/conda-bld/wcwidth_1629357192024/work
+wheel==0.45.1
