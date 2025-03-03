@@ -144,14 +144,17 @@ class Form:
 
         self._survey_type      = survey_type
 
-        # Load list names
+        # Load choice list names
         self._list_names = self._choices_df["list_name"].dropna().unique().tolist() 
 
         # Load survey columns
         self._survey_columns = self._survey_df.columns.tolist()
 
-        # Load group names
+        # Load survey group names
         self._group_names = self._survey_df[self._survey_df["type"] == "begin group"]["name"].tolist()
+
+        # Load survey repeat names
+        self._repeat_names = self._survey_df[self._survey_df["type"] == "begin repeat"]["name"].tolist()
 
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
@@ -347,7 +350,7 @@ class Form:
             out = ("default_language", "identical", self._default_language, cdl)#"Default language is identical: {}".format(self._default_language))
         return out
 
-    # Columns
+    # Survey columns
 
     def detectUnchangedSurveyColumns(self, f):
     
@@ -375,7 +378,7 @@ class Form:
                 (['removed'] * len(removed))
             }).sort_values(by = 'survey_columns', ascending = True)
 
-    # Group names
+    # Survey group names
 
     def detectUnchangedGroupNames(self, f):
     
@@ -403,7 +406,9 @@ class Form:
                 (['removed'] * len(removed))
             }).sort_values(by = 'group_names', ascending = True)
 
-    # List names
+    # Survey repeat names
+
+    # Choice list names
 
     def detectUnchangedListNames(self, f):
     
