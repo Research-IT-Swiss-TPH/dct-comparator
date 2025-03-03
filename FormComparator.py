@@ -33,10 +33,10 @@ class FormComparator:
             "Comparison Type": [
                 "Settings",
                 "Survey columns",
-                "Group names",
-                "Repeats",
-                "Questions",
-                "Choice lists",
+                "Survey group names",
+                "Survey repeats",
+                "Survey questions",
+                "Choice list names",
                 "Choice answers"],
              "Identical" : [
                 len(self._settings_df[self._settings_df["status"] == "identical"]),
@@ -78,6 +78,7 @@ class FormComparator:
             workbook = writer.book
             green_format = workbook.add_format({"bg_color": "#C6EFCE", "font_color": "#006100"})  # Green
             red_format = workbook.add_format({"bg_color": "#FFC7CE", "font_color": "#9C0006"})  # Red
+            orange_format = workbook.add_format({"bg_color": "#FFEB9C", "font_color": "#9C5700"})  # Orange
 
             self._generic_df.to_excel(writer, sheet_name="overview", index=False)
             self._settings_df.to_excel(writer, sheet_name="settings", index=False)
@@ -91,7 +92,7 @@ class FormComparator:
             worksheet = writer.sheets["settings"]
             for row in range(1, len(self._settings_df) + 1):  # Skip header row
                 status = self._settings_df.iloc[row - 1, 1] 
-                cell_format = green_format if status == "identical" else red_format
+                cell_format = green_format if status == "identical" else orange_format
                 worksheet.set_row(row, None, cell_format)
 
             worksheet = writer.sheets["survey_columns"]
