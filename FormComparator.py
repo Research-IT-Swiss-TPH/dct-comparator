@@ -27,13 +27,41 @@ class FormComparator:
 
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
-            "Comparison Type": ["Settings differences", "Added questions", "Deleted questions", "Modified questions"],
-            "Count": [
-                len(self._settings_df[self._settings_df["Finding"] == "different"]), 
-                len(self._added_questions_df), 
+            "Comparison Type": [
+                "Settings",
+                "Groups",
+                "Repeats",
+                "Questions",
+                "Choice lists",
+                "Choice answers"],
+             "Identical" : [
+                len(self._settings_df[self._settings_df["Finding"] == "identical"]),
+                "",
+                "",
+                "",
+                "",
+                ""],
+            "Added" : [
+                "",
+                "",
+                "",
+                len(self._added_questions_df),
+                "",
+                ""],
+            "Deleted": [
+                "",
+                "",
+                "",
                 len(self._deleted_questions_df),
-                len(self._major_mod_questions_df)
-            ]
+                "",
+                ""],
+            "Modified": [
+                len(self._settings_df[self._settings_df["Finding"] == "different"]), 
+                "",
+                "",
+                len(self._major_mod_questions_df),
+                "",
+                ""]
         })
 
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
