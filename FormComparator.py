@@ -4,10 +4,18 @@ import os
 class FormComparator:
 
     def __init__(self, cur_form, ref_form, output_dir = ".", output_xlsx="comparison_results.xlsx"):
+        
         """
         Initializes the XLSComparator with a name and an optional XLSX filename.
-        
-        :param output_xlsx: Filename for exporting comparison results.
+
+        This method sets up the necessary variables for performing the comparison
+        between the current form and the reference form, and specifies the output 
+        directory and output XLSX filename for storing the results.
+
+        :param cur_form: The current form to be compared (can be a DataFrame, file, etc.).
+        :param ref_form: The reference form to compare against (can be a DataFrame, file, etc.).
+        :param output_dir: Directory where the comparison results will be saved. Defaults to the current directory ("./").
+        :param output_xlsx: Filename for the output XLSX file containing comparison results. Defaults to "comparison_results.xlsx".
         """
 
         if output_dir != ".":
