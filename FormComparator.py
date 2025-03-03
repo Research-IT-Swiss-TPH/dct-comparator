@@ -84,8 +84,8 @@ class FormComparator:
             ("overview", self._generic_df),
             ("settings", self._settings_df),
             ("survey_columns", self._survey_columns_df),
-            ("group_names", self._group_names_df),
-            ("list_names", self._list_name_df),
+            ("survey_group_names", self._group_names_df),
+            ("choice_list_names", self._list_name_df),
             ("added_questions", self._added_questions_df),
             ("deleted_questions", self._deleted_questions_df),
             ("modified_questions", self._major_mod_questions_df)
@@ -93,8 +93,8 @@ class FormComparator:
 
         sds_color = [
             ("survey_columns", self._survey_columns_df),
-            ("group_names", self._group_names_df),
-            ("list_names", self._list_name_df)
+            ("survey_group_names", self._group_names_df),
+            ("choice_list_names", self._list_name_df)
         ]
 
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
