@@ -144,11 +144,14 @@ class Form:
 
         self._survey_type      = survey_type
 
-        # Load answers
+        # Load list names
         self._list_names = self._choices_df["list_name"].dropna().unique().tolist() 
 
-        # Load ODK variables
+        # Load survey columns
         self._survey_columns = self._survey_df.columns.tolist()
+
+        # Load group names
+        self._group_names = self._survey_df[self._survey_df["type"] == "begin group"]["name"].tolist()
 
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
@@ -184,6 +187,10 @@ class Form:
     def getSurveyColumns(self):
 
         return self._survey_columns
+
+    def getGroupNames(self):
+
+        return self._group_names
     
     def getChoices(self):
 
@@ -367,6 +374,34 @@ class Form:
                 (['added'] * len(added)) +
                 (['removed'] * len(removed))
             }).sort_values(by = 'survey_columns', ascending = True)
+
+    # Group names
+
+    def detectUnchangedGroupNames(self, f):
+    
+        return list(set(self._group_names) & set(f.getGroupNames()))
+
+    def detectAddedGroupNames(self, f):
+
+        return list(set(self._group_names) - set(f.getGroupNames())) 
+
+    def detectRemovedGroupNames(self, f):
+
+        return list(set(f.getGroupNames()) - set(self._group_names))
+
+    def compareGroupNames(self, f):
+
+        unchanged = self.detectUnchangedGroupNames(f)
+        added = self.detectAddedGroupNames(f)
+        removed = self.detectRemovedGroupNames(f)
+
+        return pd.DataFrame({
+            "group_names": unchanged + added + removed,
+            "status": (
+                ['unchanged'] * len(unchanged)) +
+                (['added'] * len(added)) +
+                (['removed'] * len(removed))
+            }).sort_values(by = 'group_names', ascending = True)
 
     # List names
 

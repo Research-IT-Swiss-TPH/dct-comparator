@@ -22,6 +22,7 @@ class FormComparator:
 
         self._settings_df = cur_form.compareSettings(ref_form)
         self._survey_columns_df = cur_form.compareSurveyColumns(ref_form)
+        self._group_names_df = cur_form.compareGroupNames(ref_form)
         self._list_name_df = cur_form.compareListNames(ref_form)
         self._added_questions_df = cur_form.detectAddedQuestions(ref_form)
         self._deleted_questions_df = cur_form.detectDeletedQuestions(ref_form)
@@ -32,7 +33,7 @@ class FormComparator:
             "Comparison Type": [
                 "Settings",
                 "Survey columns",
-                "Groups",
+                "Group names",
                 "Repeats",
                 "Questions",
                 "Choice lists",
@@ -40,7 +41,7 @@ class FormComparator:
              "Identical" : [
                 len(self._settings_df[self._settings_df["status"] == "identical"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
-                "",
+                len(self._group_names_df[self._group_names_df["status"] == "unchanged"]),
                 "",
                 "",
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
@@ -48,7 +49,7 @@ class FormComparator:
             "Added" : [
                 "",
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
-                "",
+                len(self._group_names_df[self._group_names_df["status"] == "added"]),
                 "",
                 len(self._added_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
@@ -56,7 +57,7 @@ class FormComparator:
             "Deleted": [
                 "",
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
-                "",
+                len(self._group_names_df[self._group_names_df["status"] == "removed"]),
                 "",
                 len(self._deleted_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
@@ -81,6 +82,7 @@ class FormComparator:
             self._generic_df.to_excel(writer, sheet_name="overview", index=False)
             self._settings_df.to_excel(writer, sheet_name="settings", index=False)
             self._survey_columns_df.to_excel(writer, sheet_name="survey_columns", index=False)
+            self._group_names_df.to_excel(writer, sheet_name="group_names", index=False)
             self._list_name_df.to_excel(writer, sheet_name="list_names", index=False)
             self._added_questions_df.to_excel(writer, sheet_name="added_questions", index=False)
             self._deleted_questions_df.to_excel(writer, sheet_name="deleted_questions", index=False)
@@ -93,20 +95,13 @@ class FormComparator:
                 worksheet.set_row(row, None, cell_format)
 
             worksheet = writer.sheets["survey_columns"]
-            for row in range(1, len(self._survey_columns_df) + 1):  # Skip header row
-                status = self._survey_columns_df.iloc[row - 1, 1]
-                if status == "added":
-                    worksheet.set_row(row, None, green_format)
-                elif status == "removed":
-                    worksheet.set_row(row, None, red_format)
+            worksheet = apply_color_format(worksheet, self._survey_columns_df, green_format, red_format)
+
+            worksheet = writer.sheets["group_names"]
+            worksheet = apply_color_format(worksheet, self._group_names_df, green_format, red_format)
 
             worksheet = writer.sheets["list_names"]
-            for row in range(1, len(self._list_name_df) + 1):  # Skip header row
-                status = self._list_name_df.iloc[row - 1, 1]
-                if status == "added":
-                    worksheet.set_row(row, None, green_format)
-                elif status == "removed":
-                    worksheet.set_row(row, None, red_format)
+            worksheet = apply_color_format(worksheet, self._list_name_df, green_format, red_format)
 
     def update_excel_with_settings(self, df):
         """
@@ -121,3 +116,13 @@ class FormComparator:
     def getOutputRelativePath(self):
 
         return self._output_path
+
+def apply_color_format(worksheet, df, green_format, red_format):
+
+    for row in range(1, len(df) + 1):  # Skip header row
+        status = df.iloc[row - 1, 1]
+        if status == "added":
+            worksheet.set_row(row, None, green_format)
+        elif status == "removed":
+            worksheet.set_row(row, None, red_format)
+    return worksheet
