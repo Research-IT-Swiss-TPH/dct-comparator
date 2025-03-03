@@ -4,7 +4,7 @@ import os
 class FormComparator:
 
     def __init__(self, cur_form, ref_form, output_dir = ".", output_xlsx="comparison_results.xlsx"):
-        
+
         """
         Initializes the XLSComparator with a name and an optional XLSX filename.
 
@@ -80,6 +80,23 @@ class FormComparator:
                 ""]
         })
 
+        sds = [
+            ("overview", self._generic_df),
+            ("settings", self._settings_df),
+            ("survey_columns", self._survey_columns_df),
+            ("group_names", self._group_names_df),
+            ("list_names", self._list_name_df),
+            ("added_questions", self._added_questions_df),
+            ("deleted_questions", self._deleted_questions_df),
+            ("modified_questions", self._major_mod_questions_df)
+        ]
+
+        sds_color = [
+            ("survey_columns", self._survey_columns_df),
+            ("group_names", self._group_names_df),
+            ("list_names", self._list_name_df)
+        ]
+
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
 
             # Define formatting styles
@@ -88,14 +105,8 @@ class FormComparator:
             red_format = workbook.add_format({"bg_color": "#FFC7CE", "font_color": "#9C0006"})  # Red
             orange_format = workbook.add_format({"bg_color": "#FFEB9C", "font_color": "#9C5700"})  # Orange
 
-            self._generic_df.to_excel(writer, sheet_name="overview", index=False)
-            self._settings_df.to_excel(writer, sheet_name="settings", index=False)
-            self._survey_columns_df.to_excel(writer, sheet_name="survey_columns", index=False)
-            self._group_names_df.to_excel(writer, sheet_name="group_names", index=False)
-            self._list_name_df.to_excel(writer, sheet_name="list_names", index=False)
-            self._added_questions_df.to_excel(writer, sheet_name="added_questions", index=False)
-            self._deleted_questions_df.to_excel(writer, sheet_name="deleted_questions", index=False)
-            self._major_mod_questions_df.to_excel(writer, sheet_name="modified_questions", index=False)
+            for csn, df in sds:
+                df.to_excel(writer, sheet_name = csn, index=False)
 
             worksheet = writer.sheets["settings"]
             for row in range(1, len(self._settings_df) + 1):  # Skip header row
@@ -103,24 +114,10 @@ class FormComparator:
                 cell_format = green_format if status == "identical" else orange_format
                 worksheet.set_row(row, None, cell_format)
 
-            worksheet = writer.sheets["survey_columns"]
-            worksheet = apply_color_format(worksheet, self._survey_columns_df, green_format, red_format)
-
-            worksheet = writer.sheets["group_names"]
-            worksheet = apply_color_format(worksheet, self._group_names_df, green_format, red_format)
-
-            worksheet = writer.sheets["list_names"]
-            worksheet = apply_color_format(worksheet, self._list_name_df, green_format, red_format)
-
-    def update_excel_with_settings(self, df):
-        """
-        Updates the Excel file by adding a 'settings' sheet with formatted results.
-        Ensures that the existing content is preserved.
-        """
-        self._settings_df = self._cur_form.compareSettings(self._ref_form)
-
-        # Load existing Excel file and append new sheet
-        
+            # Apply color formatting
+            for sheet_name, df in sds_color:
+                worksheet = writer.sheets[sheet_name]
+                worksheet = apply_color_format(worksheet, df, green_format, red_format)
 
     def getOutputRelativePath(self):
 
