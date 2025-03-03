@@ -305,7 +305,7 @@ class Form:
             self.compareVersion(f),
             self.compareDefaultLanguage(f)
         ]
-        df = pd.DataFrame(comparisons, columns=["variable", "status", "f1", "f2"])
+        df = pd.DataFrame(comparisons, columns=["variable", "status", "current", "ref"])
         return df
 
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
@@ -465,27 +465,27 @@ class Form:
         if (out.shape[0] == 0):
             out = None
 
-        if out is not None:
-            tmp = f.getQuestions().copy(deep=True)
-            tmp = tmp[tmp[f.getMainLabel()].notnull()]
-            out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp[["index", "name", f.getMainLabel()]],
-                                   left_on='label',
-                                   right_on=f.getMainLabel(),
-                                   how='left',
-                                   match_score=0,
-                                   return_score=True)
-            out = out[["row",
-                       "name_x",
-                       "label",
-                       "name_y",
-                       f.getMainLabel(),
-                       "matching_score"]] \
-                        .rename(columns = {"name_x": "name",
-                                           "name_y": "name_of_closest_lbl",
-                                           f.getMainLabel(): "closest_lbl"}) \
-                        .fillna("") \
-                        .reset_index(drop=True)
+        # if out is not None:
+        #     tmp = f.getQuestions().copy(deep=True)
+        #     tmp = tmp[tmp[f.getMainLabel()].notnull()]
+        #     out = skrub.fuzzy_join(out[["row", "name", "label"]],
+        #                            tmp[["index", "name", f.getMainLabel()]],
+        #                            left_on='label',
+        #                            right_on=f.getMainLabel(),
+        #                            how='left',
+        #                            match_score=0,
+        #                            return_score=True)
+        #     out = out[["row",
+        #                "name_x",
+        #                "label",
+        #                "name_y",
+        #                f.getMainLabel(),
+        #                "matching_score"]] \
+        #                 .rename(columns = {"name_x": "name",
+        #                                    "name_y": "name_of_closest_lbl",
+        #                                    f.getMainLabel(): "closest_lbl"}) \
+        #                 .fillna("") \
+        #                 .reset_index(drop=True)
 
         if out is None:
             out = pd.DataFrame()
