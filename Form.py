@@ -108,21 +108,29 @@ class Form:
         # Read and import raw data from XLSForm
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
+            dims = self._survey_df.shape 
+            print ("\t - Info: survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
             self._survey_df = None
             print ("\t - Info: no survey sheet found")
         try:
             self._choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
+            dims = self._choices_df.shape 
+            print ("\t - Info: choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
             self._choices_df = None
             print ("\t - Info: no choices sheet found")
         try:
             self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
+            dims = self._settings_df.shape 
+            print ("\t - Info: settings sheet with " + str(dims[1]) + " columns")
         except:
             self._settings_df = None
             print ("\t - Info: no settings sheet found")
         try:
             self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
+            dims = self._entities_df.shape 
+            print ("\t - Info: entities sheet with " + str(dims[1]) + " columns")
         except:
             self._entities_df = None
             print ("\t - Info: no entities sheet found")
@@ -274,7 +282,16 @@ class Form:
                     worksheet.set_row(row, None, cell_format)
 
         return formatted_output
-    
+
+
+    def compareSettings(self, f):
+
+        comparisons = [
+            self.compareID(f),
+            self.compareVersion(f),
+            self.compareDefaultLanguage(f)
+        ]
+
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
     def compareVersion(self, f):
 
@@ -498,16 +515,6 @@ class Form:
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
 """Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
-
-class XLSComparator:
-
-    def __init__(self,
-                 name):
-        self._name = name
-        
-    # Instance Methods
-    def getName(self):
-        return self._name    
 
 class ListAnswers:
 
