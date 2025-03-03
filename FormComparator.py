@@ -21,6 +21,8 @@ class FormComparator:
         self._f2 = f2
 
         self._settings_df = f1.compareSettings(f2)
+        self._survey_columns_df = f1.compareSurveyColumns(f2)
+        self._list_name_df = f1.compareListNames(f2)
         self._added_questions_df = f1.detectAddedQuestions(f2)
         self._deleted_questions_df = f1.detectDeletedQuestions(f2)
         self._major_mod_questions_df, self._minor_mod_questions_df = f1.detectModifiedLabels(f2)
@@ -29,34 +31,39 @@ class FormComparator:
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
                 "Settings",
+                "Survey columns",
                 "Groups",
                 "Repeats",
                 "Questions",
                 "Choice lists",
                 "Choice answers"],
              "Identical" : [
-                len(self._settings_df[self._settings_df["Finding"] == "identical"]),
+                len(self._settings_df[self._settings_df["status"] == "identical"]),
+                len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
                 "",
                 "",
                 "",
-                "",
+                len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 ""],
             "Added" : [
                 "",
+                len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
                 "",
                 "",
                 len(self._added_questions_df),
-                "",
+                len(self._list_name_df[self._list_name_df["status"] == "added"]),
                 ""],
             "Deleted": [
                 "",
+                len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
                 "",
                 "",
                 len(self._deleted_questions_df),
-                "",
+                len(self._list_name_df[self._list_name_df["status"] == "removed"]),
                 ""],
             "Modified": [
-                len(self._settings_df[self._settings_df["Finding"] == "different"]), 
+                len(self._settings_df[self._settings_df["status"] == "different"]), 
+                "",
                 "",
                 "",
                 len(self._major_mod_questions_df),
@@ -73,22 +80,33 @@ class FormComparator:
 
             self._generic_df.to_excel(writer, sheet_name="overview", index=False)
             self._settings_df.to_excel(writer, sheet_name="settings", index=False)
+            self._survey_columns_df.to_excel(writer, sheet_name="survey_columns", index=False)
+            self._list_name_df.to_excel(writer, sheet_name="list_names", index=False)
             self._added_questions_df.to_excel(writer, sheet_name="added_questions", index=False)
             self._deleted_questions_df.to_excel(writer, sheet_name="deleted_questions", index=False)
             self._major_mod_questions_df.to_excel(writer, sheet_name="modified_questions", index=False)
 
-            # Access the current worksheet
             worksheet = writer.sheets["settings"]
-
-            # Apply formatting based on "Finding" column
             for row in range(1, len(self._settings_df) + 1):  # Skip header row
-                finding = self._settings_df.iloc[row - 1, 1]  # "Finding" column
-                
-                # Apply green for "identical", red for "different"
-                cell_format = green_format if finding == "identical" else red_format
-                
-                # Apply color formatting to the entire row (Finding, f1, f2 columns)
+                status = self._settings_df.iloc[row - 1, 1] 
+                cell_format = green_format if status == "identical" else red_format
                 worksheet.set_row(row, None, cell_format)
+
+            worksheet = writer.sheets["survey_columns"]
+            for row in range(1, len(self._survey_columns_df) + 1):  # Skip header row
+                status = self._survey_columns_df.iloc[row - 1, 1]
+                if status == "added":
+                    worksheet.set_row(row, None, green_format)
+                elif status == "removed":
+                    worksheet.set_row(row, None, red_format)
+
+            worksheet = writer.sheets["list_names"]
+            for row in range(1, len(self._list_name_df) + 1):  # Skip header row
+                status = self._list_name_df.iloc[row - 1, 1]
+                if status == "added":
+                    worksheet.set_row(row, None, green_format)
+                elif status == "removed":
+                    worksheet.set_row(row, None, red_format)
 
     def update_excel_with_settings(self, df):
         """

@@ -144,6 +144,12 @@ class Form:
 
         self._survey_type      = survey_type
 
+        # Load answers
+        self._list_names = self._choices_df["list_name"].dropna().unique().tolist() 
+
+        # Load ODK variables
+        self._survey_columns = self._survey_df.columns.tolist()
+
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
         questions = questions[questions["type"] != "note"]
@@ -174,10 +180,18 @@ class Form:
     def getSurvey(self):
 
         return self._survey_df
+
+    def getSurveyColumns(self):
+
+        return self._survey_columns
     
     def getChoices(self):
 
         return self._choices_df
+
+    def getListNames(self):
+
+        return self._list_names
     
     def getSettings(self):
 
@@ -291,7 +305,7 @@ class Form:
             self.compareVersion(f),
             self.compareDefaultLanguage(f)
         ]
-        df = pd.DataFrame(comparisons, columns=["Variable", "Finding", "f1", "f2"])
+        df = pd.DataFrame(comparisons, columns=["variable", "status", "f1", "f2"])
         return df
 
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
@@ -325,6 +339,64 @@ class Form:
         else:
             out = ("default_language", "identical", self._default_language, cdl)#"Default language is identical: {}".format(self._default_language))
         return out
+
+    # Columns
+
+    def detectUnchangedSurveyColumns(self, f):
+    
+        return list(set(self._survey_columns) & set(f.getSurveyColumns()))
+
+    def detectAddedSurveyColumns(self, f):
+
+        return list(set(self._survey_columns) - set(f.getSurveyColumns())) 
+
+    def detectRemovedSurveyColumns(self, f):
+
+        return list(set(f.getSurveyColumns()) - set(self._survey_columns))
+
+    def compareSurveyColumns(self, f):
+
+        unchanged = self.detectUnchangedSurveyColumns(f)
+        added = self.detectAddedSurveyColumns(f)
+        removed = self.detectRemovedSurveyColumns(f)
+
+        return pd.DataFrame({
+            "survey_columns": unchanged + added + removed,
+            "status": (
+                ['unchanged'] * len(unchanged)) +
+                (['added'] * len(added)) +
+                (['removed'] * len(removed))
+            }).sort_values(by = 'survey_columns', ascending = True)
+
+    # List names
+
+    def detectUnchangedListNames(self, f):
+    
+        return list(set(self._list_names) & set(f.getListNames()))
+
+    def detectAddedListNames(self, f):
+
+        return list(set(self._list_names) - set(f.getListNames())) 
+
+    def detectRemovedListNames(self, f):
+
+        return list(set(f.getListNames()) - set(self._list_names))
+
+    def compareListNames(self, f):
+
+        unchanged = self.detectUnchangedListNames(f)
+        added = self.detectAddedListNames(f)
+        removed = self.detectRemovedListNames(f)
+
+        return pd.DataFrame({
+            "list_name": unchanged + added + removed,
+            "status": (
+                ['unchanged'] * len(unchanged)) +
+                (['added'] * len(added)) +
+                (['removed'] * len(removed))
+            }).sort_values(by ='list_name', ascending = True)
+
+    # Questions
     
     def detectAddedQuestions(self, f):
 
