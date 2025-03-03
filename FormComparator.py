@@ -3,7 +3,7 @@ import os
 
 class FormComparator:
 
-    def __init__(self, f1, f2, output_dir = ".", output_xlsx="comparison_results.xlsx"):
+    def __init__(self, cur_form, ref_form, output_dir = ".", output_xlsx="comparison_results.xlsx"):
         """
         Initializes the XLSComparator with a name and an optional XLSX filename.
         
@@ -17,15 +17,15 @@ class FormComparator:
             self._output_path = output_xlsx
         self._comparisons = {}  # Dictionary to store comparison results
 
-        self._f1 = f1
-        self._f2 = f2
+        self._cur_form = cur_form
+        self._ref_form = ref_form
 
-        self._settings_df = f1.compareSettings(f2)
-        self._survey_columns_df = f1.compareSurveyColumns(f2)
-        self._list_name_df = f1.compareListNames(f2)
-        self._added_questions_df = f1.detectAddedQuestions(f2)
-        self._deleted_questions_df = f1.detectDeletedQuestions(f2)
-        self._major_mod_questions_df, self._minor_mod_questions_df = f1.detectModifiedLabels(f2)
+        self._settings_df = cur_form.compareSettings(ref_form)
+        self._survey_columns_df = cur_form.compareSurveyColumns(ref_form)
+        self._list_name_df = cur_form.compareListNames(ref_form)
+        self._added_questions_df = cur_form.detectAddedQuestions(ref_form)
+        self._deleted_questions_df = cur_form.detectDeletedQuestions(ref_form)
+        self._major_mod_questions_df, self._minor_mod_questions_df = cur_form.detectModifiedLabels(ref_form)
 
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
@@ -113,7 +113,7 @@ class FormComparator:
         Updates the Excel file by adding a 'settings' sheet with formatted results.
         Ensures that the existing content is preserved.
         """
-        self._settings_df = self._f1.compareSettings(self._f2)
+        self._settings_df = self._cur_form.compareSettings(self._ref_form)
 
         # Load existing Excel file and append new sheet
         
