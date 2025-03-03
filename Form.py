@@ -291,6 +291,8 @@ class Form:
             self.compareVersion(f),
             self.compareDefaultLanguage(f)
         ]
+        df = pd.DataFrame(comparisons, columns=["Variable", "Finding", "f1", "f2"])
+        return df
 
     """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
     def compareVersion(self, f):
@@ -351,9 +353,10 @@ class Form:
                                    tmp[["index", "name", self._label]],
                                    left_on='label',
                                    right_on=self._label,
-                                   how='left',
-                                   match_score=0,
-                                   return_score=True)
+                                   drop_unmatched = False,
+                                   add_match_info = True)
+            """ 
+            print (out)
             out = out[["row",
                        "name_x",
                       "label",
@@ -365,6 +368,7 @@ class Form:
                                          self._label: "closest_lbl"}) \
                       .fillna("") \
                       .reset_index(drop=True)
+            """
 
         return out
     
@@ -411,6 +415,9 @@ class Form:
                         .fillna("") \
                         .reset_index(drop=True)
 
+        if out is None:
+            out = pd.DataFrame()
+            
         return out
     
     def detectModifiedLabels(self, f):
