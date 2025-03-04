@@ -151,10 +151,10 @@ class Form:
         self._survey_columns = self._survey_df.columns.tolist()
 
         # Load survey group names
-        self._group_names = self._survey_df[self._survey_df["type"] == "begin group"]["name"].tolist()
+        self._group_names = self._survey_df[self._survey_df["type"].isin(["begin group", "begin_group"])]["name"].tolist()
 
         # Load survey repeat names
-        self._repeat_names = self._survey_df[self._survey_df["type"] == "begin repeat"]["name"].tolist()
+        self._repeat_names = self._survey_df[self._survey_df["type"].isin(["begin repeat", "begin_repeat"])]["name"].tolist()
 
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
@@ -194,6 +194,10 @@ class Form:
     def getGroupNames(self):
 
         return self._group_names
+
+    def getRepeatNames(self):
+        
+        return self._repeat_names
     
     def getChoices(self):
 
@@ -352,89 +356,35 @@ class Form:
 
     # Survey columns
 
-    def detectUnchangedSurveyColumns(self, f):
-    
-        return list(set(self._survey_columns) & set(f.getSurveyColumns()))
-
-    def detectAddedSurveyColumns(self, f):
-
-        return list(set(self._survey_columns) - set(f.getSurveyColumns())) 
-
-    def detectRemovedSurveyColumns(self, f):
-
-        return list(set(f.getSurveyColumns()) - set(self._survey_columns))
+    def detectRepeatSurveyColumns(self, f):
+        return detectChanges(self._survey_columns, f.getSurveyColumns())
 
     def compareSurveyColumns(self, f):
-
-        unchanged = self.detectUnchangedSurveyColumns(f)
-        added = self.detectAddedSurveyColumns(f)
-        removed = self.detectRemovedSurveyColumns(f)
-
-        return pd.DataFrame({
-            "survey_columns": unchanged + added + removed,
-            "status": (
-                ['unchanged'] * len(unchanged)) +
-                (['added'] * len(added)) +
-                (['removed'] * len(removed))
-            }).sort_values(by = 'survey_columns', ascending = True)
+        return summariseChanges(self._survey_columns, f.getSurveyColumns())
 
     # Survey group names
 
-    def detectUnchangedGroupNames(self, f):
-    
-        return list(set(self._group_names) & set(f.getGroupNames()))
-
-    def detectAddedGroupNames(self, f):
-
-        return list(set(self._group_names) - set(f.getGroupNames())) 
-
-    def detectRemovedGroupNames(self, f):
-
-        return list(set(f.getGroupNames()) - set(self._group_names))
+    def detectGroupNameChanges(self, f):
+        return detectChanges(self._group_names, f.getGroupNames())
 
     def compareGroupNames(self, f):
-
-        unchanged = self.detectUnchangedGroupNames(f)
-        added = self.detectAddedGroupNames(f)
-        removed = self.detectRemovedGroupNames(f)
-
-        return pd.DataFrame({
-            "group_names": unchanged + added + removed,
-            "status": (
-                ['unchanged'] * len(unchanged)) +
-                (['added'] * len(added)) +
-                (['removed'] * len(removed))
-            }).sort_values(by = 'group_names', ascending = True)
+        return summariseChanges(self._group_names, f.getGroupNames())
 
     # Survey repeat names
 
+    def detectRepeatNameChanges(self, f):
+        return detectChanges(self._repeat_names, f.getRepeatNames())
+
+    def compareRepeatNames(self, f):
+        return summariseChanges(self._repeat_names, f.getRepeatNames())
+
     # Choice list names
 
-    def detectUnchangedListNames(self, f):
-    
-        return list(set(self._list_names) & set(f.getListNames()))
-
-    def detectAddedListNames(self, f):
-
-        return list(set(self._list_names) - set(f.getListNames())) 
-
-    def detectRemovedListNames(self, f):
-
-        return list(set(f.getListNames()) - set(self._list_names))
+    def detectRepeatListNames(self, f):
+        return detectChanges(self._list_names, f.getListNames())
 
     def compareListNames(self, f):
-
-        unchanged = self.detectUnchangedListNames(f)
-        added = self.detectAddedListNames(f)
-        removed = self.detectRemovedListNames(f)
-
-        return pd.DataFrame({
-            "list_name": unchanged + added + removed,
-            "status": (
-                ['unchanged'] * len(unchanged)) +
-                (['added'] * len(added)) +
-                (['removed'] * len(removed))
-            }).sort_values(by ='list_name', ascending = True)
+        return summariseChanges(self._list_names, f.getListNames())
 
     # Questions
     
@@ -634,6 +584,30 @@ class Form:
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
 """Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
+
+# Static methods
+
+def detectChanges(current, reference):
+
+    """Static method to detect unchanged, added, and removed items."""
+    current_set, reference_set = set(current), set(reference)
+    unchanged = list(current_set & reference_set)
+    added = list(current_set - reference_set)
+    removed = list(reference_set - current_set)
+    return unchanged, added, removed
+
+def summariseChanges(current, reference):
+
+    """Static method to compare names and return a DataFrame."""
+    unchanged, added, removed = detectChanges(current, reference)
+    return pd.DataFrame({
+        "name": unchanged + added + removed,
+        "status": (
+            ['unchanged'] * len(unchanged) +
+            ['added'] * len(added) +
+            ['removed'] * len(removed)
+        )
+    }).sort_values(by="name", ascending=True)
 
 class ListAnswers:
 

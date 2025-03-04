@@ -31,6 +31,7 @@ class FormComparator:
         self._settings_df = cur_form.compareSettings(ref_form)
         self._survey_columns_df = cur_form.compareSurveyColumns(ref_form)
         self._group_names_df = cur_form.compareGroupNames(ref_form)
+        self._repeat_names_df = cur_form.compareRepeatNames(ref_form)
         self._list_name_df = cur_form.compareListNames(ref_form)
         self._added_questions_df = cur_form.detectAddedQuestions(ref_form)
         self._deleted_questions_df = cur_form.detectDeletedQuestions(ref_form)
@@ -42,7 +43,7 @@ class FormComparator:
                 "Settings",
                 "Survey columns",
                 "Survey group names",
-                "Survey repeats",
+                "Survey repeat names",
                 "Survey questions",
                 "Choice list names",
                 "Choice answers"],
@@ -50,7 +51,7 @@ class FormComparator:
                 len(self._settings_df[self._settings_df["status"] == "identical"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
                 len(self._group_names_df[self._group_names_df["status"] == "unchanged"]),
-                "",
+                len(self._repeat_names_df[self._repeat_names_df["status"] == "unchanged"]),
                 "",
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 ""],
@@ -58,7 +59,7 @@ class FormComparator:
                 "",
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
                 len(self._group_names_df[self._group_names_df["status"] == "added"]),
-                "",
+                len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
                 len(self._added_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
                 ""],
@@ -66,7 +67,7 @@ class FormComparator:
                 "",
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
                 len(self._group_names_df[self._group_names_df["status"] == "removed"]),
-                "",
+                len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
                 len(self._deleted_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
                 ""],
@@ -85,6 +86,7 @@ class FormComparator:
             ("settings", self._settings_df),
             ("survey_columns", self._survey_columns_df),
             ("survey_group_names", self._group_names_df),
+            ("survey_repeat_names", self._repeat_names_df),
             ("choice_list_names", self._list_name_df),
             ("added_questions", self._added_questions_df),
             ("deleted_questions", self._deleted_questions_df),
