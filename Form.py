@@ -608,25 +608,3 @@ def summariseChanges(current, reference):
             ['removed'] * len(removed)
         )
     }).sort_values(by="name", ascending=True)
-
-class ListAnswers:
-
-    def __init__(self,
-                 name):
-        self._name = name
-        
-    # Instance Methods
-    """This method returns the list name."""
-    def getName(self):
-        return self._name    
-
-class Answer:
-
-    def __init__(self,
-                 list_name):
-        self._list_name = list_name
-        
-    # Instance Methods
-    """This method returns the list name."""
-    def getListName(self):
-        return self._list_name    
