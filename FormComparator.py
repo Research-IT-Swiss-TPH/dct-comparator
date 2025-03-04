@@ -23,18 +23,14 @@ class FormComparator:
             self._output_path = os.path.join(output_dir, output_xlsx)
         else:
             self._output_path = output_xlsx
-        self._comparisons = {}  # Dictionary to store comparison results
 
-        self._cur_form = cur_form
-        self._ref_form = ref_form
-
-        self._settings_df = cur_form.compareSettings(ref_form)
-        self._survey_columns_df = cur_form.compareSurveyColumns(ref_form)
-        self._group_names_df = cur_form.compareGroupNames(ref_form)
-        self._repeat_names_df = cur_form.compareRepeatNames(ref_form)
-        self._list_name_df = cur_form.compareListNames(ref_form)
-        self._added_questions_df = cur_form.detectAddedQuestions(ref_form)
-        self._deleted_questions_df = cur_form.detectDeletedQuestions(ref_form)
+        self._settings_df                                          = cur_form.compareSettings(ref_form)
+        self._survey_columns_df                                    = cur_form.compareSurveyColumns(ref_form)
+        self._group_names_df                                       = cur_form.compareGroupNames(ref_form)
+        self._repeat_names_df                                      = cur_form.compareRepeatNames(ref_form)
+        self._list_name_df                                         = cur_form.compareListNames(ref_form)
+        self._added_questions_df                                   = cur_form.detectAddedQuestions(ref_form)
+        self._deleted_questions_df                                 = cur_form.detectDeletedQuestions(ref_form)
         self._major_mod_questions_df, self._minor_mod_questions_df = cur_form.detectModifiedLabels(ref_form)
 
         # Generate summary DataFrame
@@ -81,6 +77,7 @@ class FormComparator:
                 ""]
         })
 
+        # List of sheets and corresponding DataFrame
         sds = [
             ("overview", self._generic_df),
             ("settings", self._settings_df),
@@ -98,6 +95,8 @@ class FormComparator:
             ("survey_group_names", self._group_names_df),
             ("choice_list_names", self._list_name_df)
         ]
+
+        # Write output file
 
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
 
