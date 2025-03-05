@@ -38,8 +38,8 @@ class FormComparator:
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
-                "Settings",
-                "Survey columns",
+                '=HYPERLINK("#settings!A1", "Settings")',
+                '=HYPERLINK("#survey_columns!A1", "Survey columns")',
                 "Survey group names",
                 "Survey repeat names",
                 "Survey questions",
@@ -70,7 +70,7 @@ class FormComparator:
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
                 len(self._deleted_choices_df)],
             "Modified": [
-                len(self._settings_df[self._settings_df["status"] == "different"]), 
+                len(self._settings_df[self._settings_df["status"] == "modified"]), 
                 "",
                 "",
                 "",
@@ -78,6 +78,8 @@ class FormComparator:
                 "",
                 ""]
         })
+        self._generic_df["Total"] = self._generic_df[["Identical", "Added", "Deleted", "Modified"]] \
+            .applymap(lambda x: int(x) if str(x).isdigit() else 0).sum(axis=1)
 
         # List of sheets and corresponding DataFrame
         sds = [
@@ -123,9 +125,19 @@ class FormComparator:
 
             # Define formatting styles
             workbook = writer.book
-            green_format = workbook.add_format({"bg_color": "#C6EFCE", "font_color": "#006100"})  # Green
-            red_format = workbook.add_format({"bg_color": "#FFC7CE", "font_color": "#9C0006"})  # Red
-            orange_format = workbook.add_format({"bg_color": "#FFEB9C", "font_color": "#9C5700"})  # Orange
+            green_format = workbook.add_format({
+                "bg_color": "#C6EFCE",
+                "font_color": "#006100"})  # Green
+            red_format = workbook.add_format({
+                "bg_color": "#FFC7CE",
+                "font_color": "#9C0006"})  # Red
+            orange_format = workbook.add_format({
+                "bg_color": "#FFEB9C",
+                "font_color": "#9C5700"})  # Orange
+            hyperlink_format = workbook.add_format({
+                "font_color": "blue",
+                "underline": 1
+            })
 
             for csn, df in sds:
                 df.to_excel(writer, sheet_name = csn, index=False)
@@ -146,6 +158,11 @@ class FormComparator:
                 worksheet = writer.sheets[sheet_name]
                 worksheet.set_tab_color(ccolor)
 
+            for row in range(1, len(self._generic_df) + 1):
+                cell_value = str(self._generic_df.iloc[row - 1, 0])  
+                if cell_value.startswith('=HYPERLINK('):
+                    writer.sheets["overview"].write_formula(row, 0, cell_value, hyperlink_format)
+
     def getOutputRelativePath(self):
 
         return self._output_path
@@ -158,6 +175,6 @@ def apply_color_format(worksheet, df, green_format, red_format, orange_format):
             worksheet.set_row(row, None, green_format)
         elif status == "removed":
             worksheet.set_row(row, None, red_format)
-        elif status == "different":
+        elif status == "modified":
             worksheet.set_row(row, None, orange_format)
     return worksheet
