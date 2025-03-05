@@ -91,6 +91,7 @@ class FormComparator:
         ]
 
         sds_color = [
+            ("settings", self._settings_df),
             ("survey_columns", self._survey_columns_df),
             ("survey_group_names", self._group_names_df),
             ("choice_list_names", self._list_name_df)
@@ -109,22 +110,16 @@ class FormComparator:
             for csn, df in sds:
                 df.to_excel(writer, sheet_name = csn, index=False)
 
-            worksheet = writer.sheets["settings"]
-            for row in range(1, len(self._settings_df) + 1):  # Skip header row
-                status = self._settings_df.iloc[row - 1, 1] 
-                cell_format = green_format if status == "identical" else orange_format
-                worksheet.set_row(row, None, cell_format)
-
             # Apply color formatting
             for sheet_name, df in sds_color:
                 worksheet = writer.sheets[sheet_name]
-                worksheet = apply_color_format(worksheet, df, green_format, red_format)
+                worksheet = apply_color_format(worksheet, df, green_format, red_format, orange_format)
 
     def getOutputRelativePath(self):
 
         return self._output_path
 
-def apply_color_format(worksheet, df, green_format, red_format):
+def apply_color_format(worksheet, df, green_format, red_format, orange_format):
 
     for row in range(1, len(df) + 1):  # Skip header row
         status = df.iloc[row - 1, 1]
@@ -132,4 +127,6 @@ def apply_color_format(worksheet, df, green_format, red_format):
             worksheet.set_row(row, None, green_format)
         elif status == "removed":
             worksheet.set_row(row, None, red_format)
+        elif status == "different":
+            worksheet.set_row(row, None, orange_format)
     return worksheet

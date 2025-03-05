@@ -136,12 +136,24 @@ class Form:
             print ("\t - Info: no entities sheet found")
         
         # Extract general form attributes
-        self._id               = self._settings_df.at[0, "form_id"]
-        self._title            = self._settings_df.at[0, "form_title"]
-        self._version          = self._settings_df.at[0, "version"]
-        self._default_language = self._settings_df.at[0, "default_language"]
-        self._label            = "::".join(x for x in ["label", self._default_language] if x)
 
+        # Core form settings
+        self._id                      = self._settings_df.get("form_id", [None])[0]
+        self._title                   = self._settings_df.get("form_title", [None])[0]
+        self._version                 = self._settings_df.get("version", [None])[0]
+        self._instance_name           = self._settings_df.get("instance_name", [None])[0]
+        self._default_language        = self._settings_df.get("default_language", [None])[0]
+        self._label                   = "::".join(x for x in ["label", self._default_language] if x)
+
+        # Security & Submission settings
+        self._public_key              = self._settings_df.get("public_key", [None])[0]
+        self._auto_send               = self._settings_df.get("auto_send", [None])[0]
+        self._auto_delete             = self._settings_df.get("auto_delete", [None])[0]
+
+        # Behavior settings
+        self._allow_choice_duplicates = self._settings_df.get("allow_choice_duplicates", [None])[0]
+
+        # Survey type
         self._survey_type      = survey_type
 
         # Load choice list names
@@ -234,7 +246,27 @@ class Form:
     def getDefaultLanguage(self):
 
         return self._default_language
+
+    def getInstanceName(self):
+
+        return self._instance_name
     
+    def getPublicKey(self):
+
+        return self._public_key
+
+    def getAutoSend(self):
+
+        return self._auto_send
+
+    def getAutoDelete(self):
+
+        return self._auto_delete
+
+    def getAllowChoiceDuplicates(self):
+
+        return self._allow_choice_duplicates
+
     """This method returns the main label information of the form."""
 
     def getMainLabel(self):
@@ -260,130 +292,77 @@ class Form:
     def getParent(self):
 
         return self._parent
-    
-    def compare(self, f, output_xlsx = ""):
-
-        """
-        This method takes another Form object (f) as an argument and compares various attributes of the current form with the attributes of the provided form.
-        It returns a formatted string containing comparison results.
-        """
-
-        # Perform comparisons
-        comparisons = [
-            self.compareID(f),
-            self.compareVersion(f),
-            self.compareDefaultLanguage(f)
-        ]
-
-        # Create formatted output string
-        formatted_output = ""# "\n".join(f"{comp_type}: {finding} {f1} {f2}" for comp_type, finding, f1, f2 in comparisons)
-
-       # Save results to an Excel file if requested
-        if output_xlsx:
-            output_dir = "outputs"
-            os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
-
-            # Create DataFrame with required format
-            df = pd.DataFrame(comparisons, columns=["Variable", "Finding", "f1", "f2"])
-            output_path = os.path.join(output_dir, output_xlsx)
-
-            # Write to Excel with formatting
-            with pd.ExcelWriter(output_path, engine="xlsxwriter") as writer:
-                df.to_excel(writer, sheet_name="settings", index=False)
-
-                # Access the workbook and worksheet
-                workbook = writer.book
-                worksheet = writer.sheets["settings"]
-
-                # Define formatting styles
-                green_format = workbook.add_format({"bg_color": "#C6EFCE", "font_color": "#006100"})  # Green
-                red_format = workbook.add_format({"bg_color": "#FFC7CE", "font_color": "#9C0006"})  # Red
-
-                # Apply formatting based on "Finding" column
-                for row in range(1, len(df) + 1):  # Skip header row
-                    finding = df.iloc[row - 1, 1]  # "Finding" column
-                    
-                    # Apply green for "identical", red for "different"
-                    cell_format = green_format if finding == "identical" else red_format
-                    
-                    # Apply color formatting to the entire row (Finding, f1, f2 columns)
-                    worksheet.set_row(row, None, cell_format)
-
-        return formatted_output
-
 
     def compareSettings(self, f):
 
-        comparisons = [
-            self.compareID(f),
-            self.compareVersion(f),
-            self.compareDefaultLanguage(f)
+        settings_attributes = [
+            ("form_title", self._title, f.getTitle()),
+            ("form_id", self._id, f.getID()),
+            ("version", self._version, f.getVersion()),
+            ("instance_name", self._instance_name, f.getInstanceName()),
+            ("default_language", self._default_language, f.getDefaultLanguage()),
+            ("public_key", self._public_key, f.getPublicKey()),
+            ("auto_send", self._auto_send, f.getAutoSend()),
+            ("auto_delete", self._auto_delete, f.getAutoDelete()),
+            ("allow_choice_duplicates", self._allow_choice_duplicates, f.getAllowChoiceDuplicates())
         ]
-        df = pd.DataFrame(comparisons, columns=["variable", "status", "current", "ref"])
-        return df
 
-    """This method compares the version attribute of the current form with the version attribute of the provided form. It returns a string indicating whether the versions are identical or different."""
-    def compareVersion(self, f):
+        comparisons = []
 
-        cver = f.getVersion()
-        out = ""
-        if self._version != cver:
-            out = ("version", "different", self._version, cver)#"Versions are different: {} and {}".format(self._version, cver)
-        else:
-            out = ("version", "identical", self._version, cver)#"Version is identical: {}".format(self._version)
-        return out
-    
-    """This method compares the unique identifier attribute of the current form with the identifier attribute of the provided form. It returns a string indicating whether the form IDs are identical or different."""
-    def compareID(self, f):
+        for attr, current, ref in settings_attributes:
 
-        cid = f.getID()
-        out = ""
-        if self._id != cid:
-            out = ("form_id", "different", self._id, cid)#, "Form IDs are different: {} and {}".format(self._id, cid))
-        else:
-            out = ("form_id", "identical", self._id, cid)#, "Form ID is identical: {}".format(self._id))
-        return out
-    
-    def compareDefaultLanguage(self, f):
+            if current is None and ref is None:
+                continue  # Ignore attributes not used in either form
 
-        cdl = f.getDefaultLanguage()
-        out = ""
-        if self._default_language != cdl:
-            out = ("default_language", "different", self._default_language, cdl)#"Default languages are different: {} and {}".format(self._default_language, cdl)
-        else:
-            out = ("default_language", "identical", self._default_language, cdl)#"Default language is identical: {}".format(self._default_language))
-        return out
+            if current is None:
+                status = "added"
+            elif ref is None:
+                status = "removed"
+            else:
+                status = "identical" if current == ref else "different"
+
+            comparisons.append((attr, status, current, ref))
+
+        return pd.DataFrame(comparisons, columns=["variable", "status", "current", "ref"])
 
     # Survey columns
 
     def detectRepeatSurveyColumns(self, f):
+
         return detectChanges(self._survey_columns, f.getSurveyColumns())
 
     def compareSurveyColumns(self, f):
+
         return summariseChanges(self._survey_columns, f.getSurveyColumns())
 
     # Survey group names
 
     def detectGroupNameChanges(self, f):
+
         return detectChanges(self._group_names, f.getGroupNames())
 
     def compareGroupNames(self, f):
+
         return summariseChanges(self._group_names, f.getGroupNames())
 
     # Survey repeat names
 
     def detectRepeatNameChanges(self, f):
+
         return detectChanges(self._repeat_names, f.getRepeatNames())
 
     def compareRepeatNames(self, f):
+
         return summariseChanges(self._repeat_names, f.getRepeatNames())
 
     # Choice list names
 
     def detectRepeatListNames(self, f):
+
         return detectChanges(self._list_names, f.getListNames())
 
     def compareListNames(self, f):
+
         return summariseChanges(self._list_names, f.getListNames())
 
     # Questions
@@ -589,7 +568,7 @@ class Form:
 
 def detectChanges(current, reference):
 
-    """Static method to detect unchanged, added, and removed items."""
+    """Static method to detect unchanged, added, and removed items in lists."""
     current_set, reference_set = set(current), set(reference)
     unchanged = list(current_set & reference_set)
     added = list(current_set - reference_set)
