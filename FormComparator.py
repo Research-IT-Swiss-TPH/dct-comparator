@@ -101,6 +101,22 @@ class FormComparator:
             ("choice_list_names", self._list_name_df)
         ]
 
+        choices_color = "#C6EFCE"
+        survey_color = "#1F4E79"
+        slbls_color = [
+            ("overview", "#FFEB9C"),
+            ("settings", "#FFEB9C"),
+            ("survey_columns", survey_color),
+            ("survey_group_names", survey_color),
+            ("survey_repeat_names", survey_color),
+            ("choice_list_names", choices_color),
+            ("added_choices", choices_color),
+            ("deleted_choices", choices_color),
+            ("added_questions", survey_color),
+            ("deleted_questions", survey_color),
+            ("modified_questions", survey_color)
+        ]
+
         # Write output file
 
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
@@ -113,16 +129,22 @@ class FormComparator:
 
             for csn, df in sds:
                 df.to_excel(writer, sheet_name = csn, index=False)
+                worksheet = writer.sheets[csn]
+                for idx, col in enumerate(df.columns):
+                    # Find the maximum length of the column's content (including the header)
+                    max_length = max(df[col].astype(str).map(len).max(), len(col))
+                    # Set the column width to the max length, adding a little padding
+                    worksheet.set_column(idx, idx, max_length + 2)
 
             # Apply color formatting
             for sheet_name, df in sds_color:
                 worksheet = writer.sheets[sheet_name]
                 worksheet = apply_color_format(worksheet, df, green_format, red_format, orange_format)
 
-            writer.sheets["overview"].set_tab_color("#FFEB9C")
-            writer.sheets["choice_list_names"].set_tab_color("#C6EFCE")
-            writer.sheets["added_choices"].set_tab_color("#C6EFCE")
-            writer.sheets["deleted_choices"].set_tab_color("#C6EFCE")
+            # Apply sheet label background color formatting
+            for sheet_name, ccolor in slbls_color:
+                worksheet = writer.sheets[sheet_name]
+                worksheet.set_tab_color(ccolor)
 
     def getOutputRelativePath(self):
 
