@@ -29,6 +29,8 @@ class FormComparator:
         self._group_names_df                                       = cur_form.compareGroupNames(ref_form)
         self._repeat_names_df                                      = cur_form.compareRepeatNames(ref_form)
         self._list_name_df                                         = cur_form.compareListNames(ref_form)
+        self._added_choices_df                                     = cur_form.detectAddedChoices(ref_form)
+        self._deleted_choices_df                                   = cur_form.detectDeletedChoices(ref_form)
         self._added_questions_df                                   = cur_form.detectAddedQuestions(ref_form)
         self._deleted_questions_df                                 = cur_form.detectDeletedQuestions(ref_form)
         self._major_mod_questions_df, self._minor_mod_questions_df = cur_form.detectModifiedLabels(ref_form)
@@ -58,7 +60,7 @@ class FormComparator:
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
                 len(self._added_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
-                ""],
+                len(self._added_choices_df)],
             "Deleted": [
                 "",
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
@@ -66,7 +68,7 @@ class FormComparator:
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
                 len(self._deleted_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
-                ""],
+                len(self._deleted_choices_df)],
             "Modified": [
                 len(self._settings_df[self._settings_df["status"] == "different"]), 
                 "",
@@ -85,6 +87,8 @@ class FormComparator:
             ("survey_group_names", self._group_names_df),
             ("survey_repeat_names", self._repeat_names_df),
             ("choice_list_names", self._list_name_df),
+            ("added_choices", self._added_choices_df),
+            ("deleted_choices", self._deleted_choices_df),
             ("added_questions", self._added_questions_df),
             ("deleted_questions", self._deleted_questions_df),
             ("modified_questions", self._major_mod_questions_df)

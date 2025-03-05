@@ -114,7 +114,8 @@ class Form:
             self._survey_df = None
             print ("\t - Info: no survey sheet found")
         try:
-            self._choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
+            choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
+            self._choices_df = choices_df[choices_df["list_name"].notnull()]
             dims = self._choices_df.shape 
             print ("\t - Info: choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
@@ -145,7 +146,7 @@ class Form:
         self._default_language        = self._settings_df.get("default_language", [None])[0]
         self._label                   = "::".join(x for x in ["label", self._default_language] if x)
 
-        # Security & Submission settings
+        # Security & submission settings
         self._public_key              = self._settings_df.get("public_key", [None])[0]
         self._auto_send               = self._settings_df.get("auto_send", [None])[0]
         self._auto_delete             = self._settings_df.get("auto_delete", [None])[0]
@@ -364,6 +365,34 @@ class Form:
     def compareListNames(self, f):
 
         return summariseChanges(self._list_names, f.getListNames())
+
+    def detectAddedChoices(self, f):
+
+        out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
+                       right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
+                       on = ["list_name", "name"],
+                       how = 'outer')
+        out = out[out["label_x"].isnull() & out["label_y"].notnull()]
+        out = out.reset_index(drop = True)
+
+        if (out.shape[0] == 0):
+            out = None
+
+        return out
+
+    def detectDeletedChoices(self, f):
+
+        out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
+                       right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
+                       on = ["list_name", "name"],
+                       how = 'outer')
+        out = out[out["label_x"].notnull() & out["label_y"].isnull()]
+        out = out.reset_index(drop = True)
+        
+        if (out.shape[0] == 0):
+            out = None
+
+        return out
 
     # Questions
     
