@@ -372,12 +372,12 @@ class Form:
                        right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
-        out = out[out["label_x"].isnull() & out["label_y"].notnull()]
+        out = out[out["label_x"].notnull() & out["label_y"].isnull()]
         out = out.reset_index(drop = True)
         out = out[["list_name",
                    "name",
-                   "label_y"]]
-
+                   "label_x"]]
+        
         if (out.shape[0] == 0):
             out = None
 
@@ -389,12 +389,12 @@ class Form:
                        right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
-        out = out[out["label_x"].notnull() & out["label_y"].isnull()]
+        out = out[out["label_x"].isnull() & out["label_y"].notnull()]
         out = out.reset_index(drop = True)
         out = out[["list_name",
                    "name",
-                   "label_x"]]
-        
+                   "label_y"]]
+
         if (out.shape[0] == 0):
             out = None
 
