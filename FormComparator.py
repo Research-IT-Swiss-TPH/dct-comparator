@@ -54,7 +54,7 @@ class FormComparator:
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 ""],
             "Added" : [
-                "",
+                len(self._settings_df[self._settings_df["status"] == "added"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
                 len(self._group_names_df[self._group_names_df["status"] == "added"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
@@ -62,7 +62,7 @@ class FormComparator:
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
                 len(self._added_choices_df)],
             "Deleted": [
-                "",
+                len(self._settings_df[self._settings_df["status"] == "removed"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
                 len(self._group_names_df[self._group_names_df["status"] == "removed"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
@@ -118,6 +118,11 @@ class FormComparator:
             for sheet_name, df in sds_color:
                 worksheet = writer.sheets[sheet_name]
                 worksheet = apply_color_format(worksheet, df, green_format, red_format, orange_format)
+
+            writer.sheets["overview"].set_tab_color("#FFEB9C")
+            writer.sheets["choice_list_names"].set_tab_color("#C6EFCE")
+            writer.sheets["added_choices"].set_tab_color("#C6EFCE")
+            writer.sheets["deleted_choices"].set_tab_color("#C6EFCE")
 
     def getOutputRelativePath(self):
 
