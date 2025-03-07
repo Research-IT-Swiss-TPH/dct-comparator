@@ -43,6 +43,8 @@ A file `requirements.txt` is also available.
 
 ## Screenshots
 
-![image](https://github.com/user-attachments/assets/7b3b00b0-dc2e-426e-b03a-a217d87e3d6d)
+![image](https://github.com/user-attachments/assets/0d8b4b6c-b9f5-476c-84a9-b5c952c44f4e)
 
-![image](https://github.com/user-attachments/assets/77f5b5cc-6d62-4352-a866-6b1d2526142a)
+![image](https://github.com/user-attachments/assets/891149d5-7c71-4e8f-b5f6-c618c2fee24f)
+
+![image](https://github.com/user-attachments/assets/5f423d76-c23c-407b-91a5-df58c75221ca)
