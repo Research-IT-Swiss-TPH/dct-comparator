@@ -326,6 +326,30 @@ class Form:
 
         return pd.DataFrame(comparisons, columns=["variable", "status", "current", "ref"])
 
+    @staticmethod
+    def detectChanges(current, reference):
+
+        """Static method to detect unchanged, added, and removed items in lists."""
+        current_set, reference_set = set(current), set(reference)
+        unchanged = list(current_set & reference_set)
+        added = list(current_set - reference_set)
+        removed = list(reference_set - current_set)
+        return unchanged, added, removed
+
+    @staticmethod
+    def summariseChanges(current, reference):
+
+        """Static method to compare names and return a DataFrame."""
+        unchanged, added, removed = detectChanges(current, reference)
+        return pd.DataFrame({
+            "name": unchanged + added + removed,
+            "status": (
+                ['unchanged'] * len(unchanged) +
+                ['added'] * len(added) +
+                ['removed'] * len(removed)
+            )
+        }).sort_values(by="name", ascending=True)
+
     # Survey columns
 
     def detectRepeatSurveyColumns(self, f):
@@ -598,27 +622,3 @@ class Form:
     """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
 
 """Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
-
-# Static methods
-
-def detectChanges(current, reference):
-
-    """Static method to detect unchanged, added, and removed items in lists."""
-    current_set, reference_set = set(current), set(reference)
-    unchanged = list(current_set & reference_set)
-    added = list(current_set - reference_set)
-    removed = list(reference_set - current_set)
-    return unchanged, added, removed
-
-def summariseChanges(current, reference):
-
-    """Static method to compare names and return a DataFrame."""
-    unchanged, added, removed = detectChanges(current, reference)
-    return pd.DataFrame({
-        "name": unchanged + added + removed,
-        "status": (
-            ['unchanged'] * len(unchanged) +
-            ['added'] * len(added) +
-            ['removed'] * len(removed)
-        )
-    }).sort_values(by="name", ascending=True)
