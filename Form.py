@@ -103,38 +103,40 @@ class Form:
                  in_xlsx,
                  survey_type):
 
+        if not os.path.exists(in_xlsx) or not in_xlsx.endswith('.xlsx'):
+            raise FileNotFoundError(f"File {in_xlsx} not found. Cannot create Form object.")
+
         print ("Create Form object from " + os.path.basename(in_xlsx))
-        
-        # Read and import raw data from XLSForm
+
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
             dims = self._survey_df.shape 
-            print ("\t - Info: survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
-        except:
+            print ("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+        except ValueError:
             self._survey_df = None
-            print ("\t - Info: no survey sheet found")
+            print ("\t - ⚠️ Sheet 'survey' not found in the file")
         try:
             choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
             self._choices_df = choices_df[choices_df["list_name"].notnull()]
             dims = self._choices_df.shape 
-            print ("\t - Info: choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+            print ("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
             self._choices_df = None
-            print ("\t - Info: no choices sheet found")
+            print ("\t - ℹ️ no choices sheet found")
         try:
             self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
             dims = self._settings_df.shape 
-            print ("\t - Info: settings sheet with " + str(dims[1]) + " columns")
+            print ("\t - ℹ️ settings sheet with " + str(dims[1]) + " columns")
         except:
             self._settings_df = None
-            print ("\t - Info: no settings sheet found")
+            print ("\t - ⚠️ no settings sheet found")
         try:
             self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
             dims = self._entities_df.shape 
-            print ("\t - Info: entities sheet with " + str(dims[1]) + " columns")
+            print ("\t - ℹ️ entities sheet with " + str(dims[1]) + " columns")
         except:
             self._entities_df = None
-            print ("\t - Info: no entities sheet found")
+            print ("\t - ℹ️ no entities sheet found")
         
         # Extract general form attributes
 
@@ -194,23 +196,23 @@ class Form:
         # Common words
         self._common_words = find_common_words(self._questions, self._label)
 
-    # Instance Methods
-
-    def getSurvey(self):
-
+    @property
+    def survey(self):
         return self._survey_df
 
-    def getSurveyColumns(self):
-
+    @property
+    def survey_columns(self):
         return self._survey_columns
 
-    def getGroupNames(self):
-
+    @property
+    def group_names(self):
         return self._group_names
 
-    def getRepeatNames(self):
-        
+    @property
+    def repeat_names(self):
         return self._repeat_names
+
+    # Instance Methods
     
     def getChoices(self):
 
@@ -340,7 +342,7 @@ class Form:
     def summariseChanges(current, reference):
 
         """Static method to compare names and return a DataFrame."""
-        unchanged, added, removed = detectChanges(current, reference)
+        unchanged, added, removed = Form.detectChanges(current, reference)
         return pd.DataFrame({
             "name": unchanged + added + removed,
             "status": (
@@ -354,41 +356,41 @@ class Form:
 
     def detectRepeatSurveyColumns(self, f):
 
-        return detectChanges(self._survey_columns, f.getSurveyColumns())
+        return self.detectChanges(self._survey_columns, f.survey_columns)
 
     def compareSurveyColumns(self, f):
 
-        return summariseChanges(self._survey_columns, f.getSurveyColumns())
+        return self.summariseChanges(self._survey_columns, f.survey_columns)
 
     # Survey group names
 
     def detectGroupNameChanges(self, f):
 
-        return detectChanges(self._group_names, f.getGroupNames())
+        return self.detectChanges(self._group_names, f.group_names)
 
     def compareGroupNames(self, f):
 
-        return summariseChanges(self._group_names, f.getGroupNames())
+        return self.summariseChanges(self._group_names, f.group_names)
 
     # Survey repeat names
 
     def detectRepeatNameChanges(self, f):
 
-        return detectChanges(self._repeat_names, f.getRepeatNames())
+        return self.detectChanges(self._repeat_names, f.repeat_names)
 
     def compareRepeatNames(self, f):
 
-        return summariseChanges(self._repeat_names, f.getRepeatNames())
+        return self.summariseChanges(self._repeat_names, f.repeat_names)
 
     # Choice list names
 
     def detectRepeatListNames(self, f):
 
-        return detectChanges(self._list_names, f.getListNames())
+        return self.detectChanges(self._list_names, f.getListNames())
 
     def compareListNames(self, f):
 
-        return summariseChanges(self._list_names, f.getListNames())
+        return self.summariseChanges(self._list_names, f.getListNames())
 
     def detectAddedChoices(self, f):
 
