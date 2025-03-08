@@ -211,103 +211,80 @@ class Form:
     @property
     def repeat_names(self):
         return self._repeat_names
-
-    # Instance Methods
     
-    def getChoices(self):
-
+    @property
+    def choices(self):
         return self._choices_df
 
-    def getListNames(self):
-
+    @property
+    def list_names(self):
         return self._list_names
     
-    def getSettings(self):
-
+    @property
+    def settings(self):
         return self._settings_df
 
-    """This method returns the unique identifier of the form."""
-
-    def getID(self):
-
+    @property
+    def id(self):
         return self._id
 
-    """This method returns the title of the form."""
-
-    def getTitle(self):
-
+    @property
+    def title(self):
         return self._title
     
-    """This method returns the version information of the form."""
-
-    def getVersion(self):
-
+    @property
+    def version(self):
         return self._version
-    
-    """This method returns the default language information of the form."""
 
-    def getDefaultLanguage(self):
-
+    @property
+    def default_language(self):
         return self._default_language
 
-    def getInstanceName(self):
-
+    @property
+    def instance_name(self):
         return self._instance_name
     
-    def getPublicKey(self):
-
+    @property
+    def public_key(self):
         return self._public_key
 
-    def getAutoSend(self):
-
+    @property
+    def auto_send(self):
         return self._auto_send
 
-    def getAutoDelete(self):
-
+    @property
+    def auto_delete(self):
         return self._auto_delete
 
-    def getAllowChoiceDuplicates(self):
-
+    @property
+    def allow_choice_duplicates(self):
         return self._allow_choice_duplicates
 
-    """This method returns the main label information of the form."""
-
-    def getMainLabel(self):
-
+    @property
+    def main_label(self):
         return self._label
     
-    """This method returns the survey type associated with the form."""
-
-    def getSurveyType(self):
-
-        return self._survey_type
-    
-    def getQuestions(self):
-
+    @property
+    def questions(self):
         return self._questions
-    
-    def getCommonWords(self):
-
-        return self._common_words
     
     """This method is intended to return the parent of the form. However, the parent attribute (_parent) is not set within the class, so this method may not provide the expected functionality without additional implementation."""
     
     def getParent(self):
-
         return self._parent
 
     def compareSettings(self, f):
 
         settings_attributes = [
-            ("form_title", self._title, f.getTitle()),
-            ("form_id", self._id, f.getID()),
-            ("version", self._version, f.getVersion()),
-            ("instance_name", self._instance_name, f.getInstanceName()),
-            ("default_language", self._default_language, f.getDefaultLanguage()),
-            ("public_key", self._public_key, f.getPublicKey()),
-            ("auto_send", self._auto_send, f.getAutoSend()),
-            ("auto_delete", self._auto_delete, f.getAutoDelete()),
-            ("allow_choice_duplicates", self._allow_choice_duplicates, f.getAllowChoiceDuplicates())
+            ("form_title", self._title, f.title),
+            ("form_id", self._id, f.id),
+            ("version", self._version, f.version),
+            ("instance_name", self._instance_name, f.instance_name),
+            ("default_language", self._default_language, f.default_language),
+            ("public_key", self._public_key, f.public_key),
+            ("auto_send", self._auto_send, f.auto_send),
+            ("auto_delete", self._auto_delete, f.auto_delete),
+            ("allow_choice_duplicates", self._allow_choice_duplicates, f.allow_choice_duplicates)
         ]
 
         comparisons = []
@@ -386,16 +363,16 @@ class Form:
 
     def detectRepeatListNames(self, f):
 
-        return self.detectChanges(self._list_names, f.getListNames())
+        return self.detectChanges(self._list_names, f.list_names)
 
     def compareListNames(self, f):
 
-        return self.summariseChanges(self._list_names, f.getListNames())
+        return self.summariseChanges(self._list_names, f.list_names)
 
     def detectAddedChoices(self, f):
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
-                       right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.choices.rename(columns = {f.main_label: "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
         out = out[out["label_x"].notnull() & out["label_y"].isnull()]
@@ -412,7 +389,7 @@ class Form:
     def detectDeletedChoices(self, f):
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
-                       right = f.getChoices().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.choices.rename(columns = {f.main_label: "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
         out = out[out["label_x"].isnull() & out["label_y"].notnull()]
@@ -431,7 +408,7 @@ class Form:
     def detectAddedQuestions(self, f):
 
         out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].isnull() & out["type_y"].notnull()]
@@ -477,7 +454,7 @@ class Form:
     def detectDeletedQuestions(self, f):
 
         out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].notnull() & out["type_y"].isnull()]
@@ -496,12 +473,12 @@ class Form:
             out = None
 
         # if out is not None:
-        #     tmp = f.getQuestions().copy(deep=True)
-        #     tmp = tmp[tmp[f.getMainLabel()].notnull()]
+        #     tmp = f.questions.copy(deep=True)
+        #     tmp = tmp[tmp[f.main_label].notnull()]
         #     out = skrub.fuzzy_join(out[["row", "name", "label"]],
-        #                            tmp[["index", "name", f.getMainLabel()]],
+        #                            tmp[["index", "name", f.main_label]],
         #                            left_on='label',
-        #                            right_on=f.getMainLabel(),
+        #                            right_on=f.main_label,
         #                            how='left',
         #                            match_score=0,
         #                            return_score=True)
@@ -509,11 +486,11 @@ class Form:
         #                "name_x",
         #                "label",
         #                "name_y",
-        #                f.getMainLabel(),
+        #                f.main_label,
         #                "matching_score"]] \
         #                 .rename(columns = {"name_x": "name",
         #                                    "name_y": "name_of_closest_lbl",
-        #                                    f.getMainLabel(): "closest_lbl"}) \
+        #                                    f.main_label: "closest_lbl"}) \
         #                 .fillna("") \
         #                 .reset_index(drop=True)
 
@@ -525,7 +502,7 @@ class Form:
     def detectModifiedLabels(self, f):
 
         out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'inner')
         out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), axis = 1)
@@ -567,7 +544,7 @@ class Form:
     def detectModifiedTypes(self, f):
 
         out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.getQuestions().rename(columns = {f.getMainLabel(): "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'inner')
         out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["type_x"], s2 = row["type_y"]), axis = 1)
@@ -594,7 +571,7 @@ class Form:
         tmp1 = self._questions.copy(deep=True).rename(columns = {self._label: "label"})
         tmp1 = tmp1[tmp1["label"].notnull()]
 
-        tmp2 = f.getQuestions().rename(columns = {f.getMainLabel(): "label"})
+        tmp2 = f.questions.rename(columns = {f.main_label: "label"})
         tmp2 = tmp2[tmp2["label"].notnull()]
 
         out = skrub.fuzzy_join(tmp1[["index", "name", "label", "type"]],
