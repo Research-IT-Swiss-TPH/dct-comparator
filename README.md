@@ -44,7 +44,7 @@ A file `requirements.txt` is also available.
 
 ## Development
 
-f you want to contribute, follow these steps:
+If you want to contribute, follow these steps:
 
 * Fork the repository;
 * Create a feature branch based on the develop branch;
