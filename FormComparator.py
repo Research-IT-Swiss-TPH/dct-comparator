@@ -1,9 +1,10 @@
+import Form as form
 import pandas as pd
 import os
 
 class FormComparator:
 
-    def __init__(self, cur_form, ref_form, output_dir = ".", output_xlsx="comparison_results.xlsx"):
+    def __init__(self, cur_xlsx, ref_xlsx, output_dir = ".", output_xlsx="comparison_results.xlsx"):
 
         """
         Initializes the XLSComparator with a name and an optional XLSX filename.
@@ -23,6 +24,11 @@ class FormComparator:
             self._output_path = os.path.join(output_dir, output_xlsx)
         else:
             self._output_path = output_xlsx
+
+        cur_form = form.Form(cur_xlsx)
+        ref_form = form.Form(ref_xlsx)
+
+        print ("📝 Compare forms and store results in " + self._output_path)
 
         self._settings_df                                          = cur_form.compareSettings(ref_form)
         self._survey_columns_df                                    = cur_form.compareSurveyColumns(ref_form)
@@ -79,7 +85,7 @@ class FormComparator:
                 ""]
         })
         self._generic_df["Total"] = self._generic_df[["Identical", "Added", "Deleted", "Modified"]] \
-            .applymap(lambda x: int(x) if str(x).isdigit() else 0).sum(axis=1)
+            .apply(lambda col: pd.to_numeric(col, errors='coerce').fillna(0).astype(int)).sum(axis=1)
 
         # List of sheets and corresponding DataFrame
         sds = [

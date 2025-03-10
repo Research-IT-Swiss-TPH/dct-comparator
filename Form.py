@@ -76,13 +76,6 @@ def process_label(s):
 XLSForm is a standard format for authoring surveys in a spreadsheet format, often used in conjunction with data collection tools like ODK."""
 
 class Form:
-
-    # Class Attributes
-    """_defaults (Class-level attribute): This dictionary defines default values for certain attributes of the Form class.
-    Currently, it includes the key "survey" with a default value of None."""
-    _defaults = {
-        "survey_type": None
-    }
     
     # Constructor
     """The constructor initializes a new Form object with the provided parameters.
@@ -96,17 +89,15 @@ class Form:
     _label (string): The title or label of the form extracted from the XLSForm.
     _version (tuple): The version information extracted from the XLSForm.
     _default_language (tuple): The default language information extracted from the XLSForm.
-    _survey_type (object): The survey type object passed as a parameter to the constructor.
     
     It is important to ensure that the Form objects are properly initialized with the required survey information before using these comparison methods."""
     def __init__(self,
-                 in_xlsx,
-                 survey_type):
+                 in_xlsx):
 
         if not os.path.exists(in_xlsx) or not in_xlsx.endswith('.xlsx'):
             raise FileNotFoundError(f"File {in_xlsx} not found. Cannot create Form object.")
 
-        print ("Create Form object from " + os.path.basename(in_xlsx))
+        print ("📝 Create Form object from " + os.path.basename(in_xlsx))
 
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
@@ -156,9 +147,6 @@ class Form:
 
         # Behavior settings
         self._allow_choice_duplicates = self._settings_df.get("allow_choice_duplicates", [None])[0]
-
-        # Survey type
-        self._survey_type      = survey_type
 
         # Load choice list names
         self._list_names = self._choices_df["list_name"].dropna().unique().tolist() 
@@ -286,7 +274,7 @@ class Form:
             ("version", self._version, f.version),
             ("instance_name", self._instance_name, f.instance_name),
             ("default_language", self._default_language, f.default_language),
-            ("style", self.__style, f.style),
+            ("style", self._style, f.style),
             ("public_key", self._public_key, f.public_key),
             ("auto_send", self._auto_send, f.auto_send),
             ("auto_delete", self._auto_delete, f.auto_delete),
