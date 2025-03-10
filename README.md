@@ -41,3 +41,7 @@ A file `requirements.txt` is also available.
 ![image](https://github.com/user-attachments/assets/891149d5-7c71-4e8f-b5f6-c618c2fee24f)
 
 ![image](https://github.com/user-attachments/assets/5f423d76-c23c-407b-91a5-df58c75221ca)
+
+## Licensing
+
+The project is open-sourced, with all code shared on GitHub under an MIT license to promote accessibility and collaboration.
