@@ -2,7 +2,9 @@
 
 ## Overview
 
-**DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm and REDCap data collection tools. This project provides a set of Python classes to extract, process, and compare information from XLSForms () and REDCap data dictionaries (experimental).
+**DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm data collection tools. This project addresses the need for effectively managing and tracking changes in XLSForm-based data collection tools, such as the WHO verbal autopsy, which is implemented in XX countries. Data collection tools often require regular updates to a master version and localized adaptations to meet specific regional or local needs. However, tracking changes across different master and child versions is a complex and time-consuming process. To simplify this, the project aims to develop a Python tool that streamlines the functional comparison of XLSForms.
+
+The solution includes the development of a Python class designed to represents an XLSForm and provides class methods for 1-to-1 or 1-to-N comparisons of ODK forms from a functional perspective. A step-by-step workflow will be created to demonstrate how to use the class for comparing two forms or a master form with multiple child forms. The workflow will generate an Excel file with multiple tabs, providing a detailed comparison of XLSForms. It will highlight functional differences across various components using color scales, with the possibility of including additional comparisons as needed. 
 
 ## Form class features
 
@@ -15,16 +17,7 @@ Key features of the Form class include:
 * **Retrieve questions**: obtain a dataframe containing the survey questions, including attributes like question type, label, and group information.
 * **Comparison**: compare 2 Form objects to detect differences in form ID, version, and default language. Additionally, identify added, deleted, modified questions, and similar labels between two forms. Return an excel summary of the detected differences.
 
-A notebook extract_info_from_xlsforms.ipynb is available to demonstrate how the class can be used.
-
-## DataDic class features (experimental)
-
-The DataDic class represents an REDCap data dictionary and provides various methods to interact with and compare REDcap data dictionaries.
-
-Key features of the Form class include:
-
-* Initialization: initialize a DataDic object by providing the path to the CSV data dictionary and a dictionary type.
-* Comparison: compare two DataDic objects to identify added, deleted, modified questions, and similar labels between two forms.
+A Juypter notebook **extract_info_from_xlsforms.ipynb** is available to demonstrate how the class can be used.
 
 ## Dependencies
 
