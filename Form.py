@@ -146,6 +146,7 @@ class Form:
         self._version                 = self._settings_df.get("version", [None])[0]
         self._instance_name           = self._settings_df.get("instance_name", [None])[0]
         self._default_language        = self._settings_df.get("default_language", [None])[0]
+        self._style                   = self._settings_df.get("style", [None])[0]
         self._label                   = "::".join(x for x in ["label", self._default_language] if x)
 
         # Security & submission settings
@@ -241,6 +242,10 @@ class Form:
         return self._default_language
 
     @property
+    def style(self):
+        return self._style
+
+    @property
     def instance_name(self):
         return self._instance_name
     
@@ -281,6 +286,7 @@ class Form:
             ("version", self._version, f.version),
             ("instance_name", self._instance_name, f.instance_name),
             ("default_language", self._default_language, f.default_language),
+            ("style", self.__style, f.style),
             ("public_key", self._public_key, f.public_key),
             ("auto_send", self._auto_send, f.auto_send),
             ("auto_delete", self._auto_delete, f.auto_delete),
