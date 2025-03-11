@@ -4,7 +4,6 @@ import string
 import Levenshtein
 import re
 import nltk
-from IPython.display import Markdown, display
 nltk.download('punkt_tab')
 #nltk.download('punkt')
 nltk.download('stopwords')
@@ -18,9 +17,6 @@ stop_words.discard("where")
 stop_words.discard("how")
 stop_words.discard("when")
 stop_words.discard("why")
-
-def printmd(string):
-    display(Markdown(string))
 
 def get_normalized_edit_distance(s1, s2):
     try:
@@ -99,39 +95,39 @@ class Form:
                  in_xlsx):
 
         if not os.path.exists(in_xlsx) or not in_xlsx.endswith('.xlsx'):
-            raise FileNotFoundError(f"File **{in_xlsx}** not found. Cannot create Form object.")
+            raise FileNotFoundError(f"File {in_xlsx} not found. Cannot create Form object.")
 
-        printmd(f"📝 Create Form object from **{os.path.basename(in_xlsx)}**")
+        print(f"📝 Create Form object from {os.path.basename(in_xlsx)}")
 
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
             dims = self._survey_df.shape 
-            print ("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+            print("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except ValueError:
             self._survey_df = None
-            print ("\t - ⚠️ Sheet 'survey' not found in the file")
+            print("\t - ⚠️ Sheet 'survey' not found in the file")
         try:
             choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
             self._choices_df = choices_df[choices_df["list_name"].notnull()]
             dims = self._choices_df.shape 
-            print ("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+            print("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
             self._choices_df = None
-            print ("\t - ℹ️ no choices sheet found")
+            print("\t - ℹ️ no choices sheet found")
         try:
             self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
             dims = self._settings_df.shape 
-            print ("\t - ℹ️ settings sheet with " + str(dims[1]) + " columns")
+            print("\t - ℹ️ settings sheet with " + str(dims[1]) + " columns")
         except:
             self._settings_df = None
-            print ("\t - ⚠️ no settings sheet found")
+            print("\t - ⚠️ no settings sheet found")
         try:
             self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
             dims = self._entities_df.shape 
-            print ("\t - ℹ️ entities sheet with " + str(dims[1]) + " columns")
+            print("\t - ℹ️ entities sheet with " + str(dims[1]) + " columns")
         except:
             self._entities_df = None
-            print ("\t - ℹ️ no entities sheet found")
+            print("\t - ℹ️ no entities sheet found")
         
         # Extract general form attributes
 
