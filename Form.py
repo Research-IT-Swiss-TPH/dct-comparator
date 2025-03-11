@@ -4,6 +4,7 @@ import string
 import Levenshtein
 import re
 import nltk
+from IPython.display import Markdown, display
 nltk.download('punkt_tab')
 #nltk.download('punkt')
 nltk.download('stopwords')
@@ -17,6 +18,9 @@ stop_words.discard("where")
 stop_words.discard("how")
 stop_words.discard("when")
 stop_words.discard("why")
+
+def printmd(string):
+    display(Markdown(string))
 
 def get_normalized_edit_distance(s1, s2):
     try:
@@ -95,9 +99,9 @@ class Form:
                  in_xlsx):
 
         if not os.path.exists(in_xlsx) or not in_xlsx.endswith('.xlsx'):
-            raise FileNotFoundError(f"File {in_xlsx} not found. Cannot create Form object.")
+            raise FileNotFoundError(f"File **{in_xlsx}** not found. Cannot create Form object.")
 
-        print ("📝 Create Form object from " + os.path.basename(in_xlsx))
+        printmd(f"📝 Create Form object from **{os.path.basename(in_xlsx)}**")
 
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
