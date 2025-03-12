@@ -46,7 +46,7 @@ class FormComparator:
             "Comparison Type": [
                 '=HYPERLINK("#settings!A1", "Settings")',
                 '=HYPERLINK("#survey_columns!A1", "Survey columns")',
-                "Survey group names",
+                '=HYPERLINK("#survey_group_names!A1", "Survey group names")',
                 "Survey repeat names",
                 "Survey questions",
                 "Choice list names",
