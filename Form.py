@@ -347,6 +347,16 @@ class Form:
 
         return self.summariseChanges(self._list_names, f.list_names)
 
+    def compareChoices(self, f):
+
+        added_df = self.detectAddedChoices(f)
+        removed_df = self.detectDeletedChoices(f)
+
+        out = pd.concat([added_df, removed_df], join = "inner") \
+            .sort_values(by=["list_name", "name"], ascending=[True, True])
+        
+        return out
+
     def detectAddedChoices(self, f):
 
         list_name_df = self.compareListNames(f).rename(columns={'name': 'list_name'})
@@ -365,9 +375,9 @@ class Form:
             out = out.reset_index(drop = True)
 
             # Different flag if the list_name has actually been added
-            out = out[["list_name",
-                       "name",
-                       "label_x"]].merge(list_name_df[['list_name', 'status']], on='list_name', how='left')
+            out = out[["list_name", "name", "label_x"]] \
+                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+                .rename(columns={'label_x': 'label'})
         
         return out
 
@@ -389,9 +399,9 @@ class Form:
             out = out.reset_index(drop = True)
 
             # Different flag if the list_name has actually been removed
-            out = out[["list_name",
-                      "name",
-                      "label_y"]].merge(list_name_df[['list_name', 'status']], on='list_name', how='left')
+            out = out[["list_name", "name", "label_y"]] \
+                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+                .rename(columns={'label_y': 'label'})
 
         return out
 
