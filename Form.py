@@ -349,11 +349,30 @@ class Form:
 
     def compareChoices(self, f):
 
+        unchanged_df = self.detectUnchangedChoices(f)
         added_df = self.detectAddedChoices(f)
         removed_df = self.detectDeletedChoices(f)
 
-        out = pd.concat([added_df, removed_df], join = "inner") \
-            .sort_values(by=["list_name", "name"], ascending=[True, True])
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+            .sort_values(by=["list_name", "name"], ascending=[True, True], key = lambda x: x.str.lower())
+        
+        return out
+
+    def detectUnchangedChoices(self, f):
+
+        out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
+                       right = f.choices.rename(columns = {f.main_label: "label"}),
+                       on = ["list_name", "name"],
+                       how = 'outer')
+        out = out[out["label_x"].notnull() & out["label_y"].notnull()]
+
+        if (out.shape[0] == 0):
+            out = None
+        else:
+            out = out.reset_index(drop = True)
+            out["status"] = "unchanged"
+            out = out[["list_name", "name", "label_x", "status", "label_y"]] \
+                .rename(columns={'label_x': 'label'})
         
         return out
 
