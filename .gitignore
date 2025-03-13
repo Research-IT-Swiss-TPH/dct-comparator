@@ -1,2 +1,7 @@
 /.ipynb_checkpoints
 /__pycache__
+*.toc
+*.tex
+*.aux
+*.lot
+/extract_info_from_xlsforms_files

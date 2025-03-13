@@ -21,7 +21,7 @@ A Juypter notebook **extract_info_from_xlsforms.ipynb** is available to demonstr
 
 ## Dependencies
 
-The project requires Python 3.13.2 to work and relies in particular on the following Python libraries:
+The project requires **Python 3.13.2** to work and relies in particular on the following Python libraries:
 
 * pandas 2.2.3
 * Levenshtein 0.26.1
@@ -41,3 +41,17 @@ A file `requirements.txt` is also available.
 ![image](https://github.com/user-attachments/assets/891149d5-7c71-4e8f-b5f6-c618c2fee24f)
 
 ![image](https://github.com/user-attachments/assets/5f423d76-c23c-407b-91a5-df58c75221ca)
+
+## Development
+
+If you want to contribute, follow these steps:
+
+* Fork the repository;
+* Create a feature branch based on the develop branch;
+* Write clean and well-documented code;
+* Commit and push your changes;
+* Open a pull request
+
+## Licensing
+
+The project is open-sourced, with all code shared on GitHub under an MIT license to promote accessibility and collaboration.

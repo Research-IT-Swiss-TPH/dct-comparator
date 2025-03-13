@@ -97,37 +97,37 @@ class Form:
         if not os.path.exists(in_xlsx) or not in_xlsx.endswith('.xlsx'):
             raise FileNotFoundError(f"File {in_xlsx} not found. Cannot create Form object.")
 
-        print ("📝 Create Form object from " + os.path.basename(in_xlsx))
+        print(f"📝 Create Form object from {os.path.basename(in_xlsx)}")
 
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
             dims = self._survey_df.shape 
-            print ("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+            print("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except ValueError:
             self._survey_df = None
-            print ("\t - ⚠️ Sheet 'survey' not found in the file")
+            print("\t - ⚠️ Sheet 'survey' not found in the file")
         try:
             choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
             self._choices_df = choices_df[choices_df["list_name"].notnull()]
             dims = self._choices_df.shape 
-            print ("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
+            print("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except:
             self._choices_df = None
-            print ("\t - ℹ️ no choices sheet found")
+            print("\t - ℹ️ no choices sheet found")
         try:
             self._settings_df = pd.read_excel(in_xlsx, sheet_name="settings")
             dims = self._settings_df.shape 
-            print ("\t - ℹ️ settings sheet with " + str(dims[1]) + " columns")
+            print("\t - ℹ️ settings sheet with " + str(dims[1]) + " columns")
         except:
             self._settings_df = None
-            print ("\t - ⚠️ no settings sheet found")
+            print("\t - ⚠️ no settings sheet found")
         try:
             self._entities_df = pd.read_excel(in_xlsx, sheet_name="entities")
             dims = self._entities_df.shape 
-            print ("\t - ℹ️ entities sheet with " + str(dims[1]) + " columns")
+            print("\t - ℹ️ entities sheet with " + str(dims[1]) + " columns")
         except:
             self._entities_df = None
-            print ("\t - ℹ️ no entities sheet found")
+            print("\t - ℹ️ no entities sheet found")
         
         # Extract general form attributes
 
@@ -325,19 +325,11 @@ class Form:
 
     # Survey columns
 
-    def detectRepeatSurveyColumns(self, f):
-
-        return self.detectChanges(self._survey_columns, f.survey_columns)
-
     def compareSurveyColumns(self, f):
 
         return self.summariseChanges(self._survey_columns, f.survey_columns)
 
     # Survey group names
-
-    def detectGroupNameChanges(self, f):
-
-        return self.detectChanges(self._group_names, f.group_names)
 
     def compareGroupNames(self, f):
 
@@ -345,55 +337,90 @@ class Form:
 
     # Survey repeat names
 
-    def detectRepeatNameChanges(self, f):
-
-        return self.detectChanges(self._repeat_names, f.repeat_names)
-
     def compareRepeatNames(self, f):
 
         return self.summariseChanges(self._repeat_names, f.repeat_names)
 
     # Choice list names
 
-    def detectRepeatListNames(self, f):
-
-        return self.detectChanges(self._list_names, f.list_names)
-
     def compareListNames(self, f):
 
         return self.summariseChanges(self._list_names, f.list_names)
 
+    def compareChoices(self, f):
+
+        unchanged_df = self.detectUnchangedChoices(f)
+        added_df = self.detectAddedChoices(f)
+        removed_df = self.detectDeletedChoices(f)
+
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+            .sort_values(by=["list_name", "name"], ascending=[True, True], key = lambda x: x.str.lower())
+        
+        return out
+
+    def detectUnchangedChoices(self, f):
+
+        out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
+                       right = f.choices.rename(columns = {f.main_label: "label"}),
+                       on = ["list_name", "name"],
+                       how = 'outer')
+        out = out[out["label_x"].notnull() & out["label_y"].notnull()]
+
+        if (out.shape[0] == 0):
+            out = None
+        else:
+            out = out.reset_index(drop = True)
+            out["status"] = "unchanged"
+            out = out[["list_name", "name", "label_x", "status", "label_y"]] \
+                .rename(columns={'label_x': 'label'})
+        
+        return out
+
     def detectAddedChoices(self, f):
+
+        list_name_df = self.compareListNames(f).rename(columns={'name': 'list_name'})
+        list_name_df.loc[list_name_df['status'] == 'added', 'status'] = 'list_name_added'
+        list_name_df.loc[list_name_df['status'] == 'unchanged', 'status'] = 'added'
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
                        right = f.choices.rename(columns = {f.main_label: "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
         out = out[out["label_x"].notnull() & out["label_y"].isnull()]
-        out = out.reset_index(drop = True)
-        out = out[["list_name",
-                   "name",
-                   "label_x"]]
-        
+
         if (out.shape[0] == 0):
             out = None
+        else:
+            out = out.reset_index(drop = True)
 
+            # Different flag if the list_name has actually been added
+            out = out[["list_name", "name", "label_x"]] \
+                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+                .rename(columns={'label_x': 'label'})
+        
         return out
 
     def detectDeletedChoices(self, f):
+
+        list_name_df = self.compareListNames(f).rename(columns={'name': 'list_name'})
+        list_name_df.loc[list_name_df['status'] == 'removed', 'status'] = 'list_name_removed'
+        list_name_df.loc[list_name_df['status'] == 'unchanged', 'status'] = 'removed'
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
                        right = f.choices.rename(columns = {f.main_label: "label"}),
                        on = ["list_name", "name"],
                        how = 'outer')
         out = out[out["label_x"].isnull() & out["label_y"].notnull()]
-        out = out.reset_index(drop = True)
-        out = out[["list_name",
-                   "name",
-                   "label_y"]]
-
+        
         if (out.shape[0] == 0):
             out = None
+        else:
+            out = out.reset_index(drop = True)
+
+            # Different flag if the list_name has actually been removed
+            out = out[["list_name", "name", "label_y"]] \
+                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+                .rename(columns={'label_y': 'label'})
 
         return out
 
