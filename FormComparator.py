@@ -35,8 +35,7 @@ class FormComparator:
         self._group_names_df                                       = cur_form.compareGroupNames(ref_form)
         self._repeat_names_df                                      = cur_form.compareRepeatNames(ref_form)
         self._list_name_df                                         = cur_form.compareListNames(ref_form)
-        self._added_choices_df                                     = cur_form.detectAddedChoices(ref_form)
-        self._deleted_choices_df                                   = cur_form.detectDeletedChoices(ref_form)
+        self._choices_df                                           = cur_form.compareChoices(ref_form)
         self._added_questions_df                                   = cur_form.detectAddedQuestions(ref_form)
         self._deleted_questions_df                                 = cur_form.detectDeletedQuestions(ref_form)
         self._major_mod_questions_df, self._minor_mod_questions_df = cur_form.detectModifiedLabels(ref_form)
@@ -44,45 +43,45 @@ class FormComparator:
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
-                '=HYPERLINK("#settings!A1", "Settings")',
                 '=HYPERLINK("#survey_columns!A1", "Survey columns")',
-                "Survey group names",
+                '=HYPERLINK("#survey_group_names!A1", "Survey group names")',
                 "Survey repeat names",
                 "Survey questions",
                 "Choice list names",
-                "Choice answers"],
+                '=HYPERLINK("#choice_changes!A1", "Choices")',
+                '=HYPERLINK("#settings!A1", "Settings")'],
              "Identical" : [
-                len(self._settings_df[self._settings_df["status"] == "identical"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
                 len(self._group_names_df[self._group_names_df["status"] == "unchanged"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "unchanged"]),
                 "",
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
-                ""],
+                len(self._choices_df[self._choices_df["status"] == "unchanged"]),
+                len(self._settings_df[self._settings_df["status"] == "identical"])],
             "Added" : [
-                len(self._settings_df[self._settings_df["status"] == "added"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
                 len(self._group_names_df[self._group_names_df["status"] == "added"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
                 len(self._added_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
-                len(self._added_choices_df)],
+                len(self._choices_df[self._choices_df["status"].str.contains("added", na=False)]),
+                len(self._settings_df[self._settings_df["status"] == "added"])],
             "Deleted": [
-                len(self._settings_df[self._settings_df["status"] == "removed"]),
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
                 len(self._group_names_df[self._group_names_df["status"] == "removed"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
                 len(self._deleted_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
-                len(self._deleted_choices_df)],
+                len(self._choices_df[self._choices_df["status"].str.contains("removed", na=False)]),
+                len(self._settings_df[self._settings_df["status"] == "removed"])],
             "Modified": [
-                len(self._settings_df[self._settings_df["status"] == "modified"]), 
                 "",
                 "",
                 "",
                 len(self._major_mod_questions_df),
                 "",
-                ""]
+                "",
+                len(self._settings_df[self._settings_df["status"] == "modified"])]
         })
         self._generic_df["Total"] = self._generic_df[["Identical", "Added", "Deleted", "Modified"]] \
             .apply(lambda col: pd.to_numeric(col, errors='coerce').fillna(0).astype(int)).sum(axis=1)
@@ -90,39 +89,35 @@ class FormComparator:
         # List of sheets and corresponding DataFrame
         sds = [
             ("overview", self._generic_df),
-            ("settings", self._settings_df),
             ("survey_columns", self._survey_columns_df),
             ("survey_group_names", self._group_names_df),
             ("survey_repeat_names", self._repeat_names_df),
-            ("choice_list_names", self._list_name_df),
-            ("added_choices", self._added_choices_df),
-            ("deleted_choices", self._deleted_choices_df),
+            ("choice_changes", self._choices_df),
             ("added_questions", self._added_questions_df),
             ("deleted_questions", self._deleted_questions_df),
-            ("modified_questions", self._major_mod_questions_df)
+            ("modified_questions", self._major_mod_questions_df),
+            ("settings", self._settings_df)
         ]
 
         sds_color = [
-            ("settings", self._settings_df),
-            ("survey_columns", self._survey_columns_df),
-            ("survey_group_names", self._group_names_df),
-            ("choice_list_names", self._list_name_df)
+            ("survey_columns", self._survey_columns_df, 1),
+            ("survey_group_names", self._group_names_df, 1),
+            ("choice_changes", self._choices_df, 3),
+            ("settings", self._settings_df, 1)
         ]
 
         choices_color = "#C6EFCE"
         survey_color = "#1F4E79"
         slbls_color = [
             ("overview", "#FFEB9C"),
-            ("settings", "#FFEB9C"),
             ("survey_columns", survey_color),
             ("survey_group_names", survey_color),
             ("survey_repeat_names", survey_color),
-            ("choice_list_names", choices_color),
-            ("added_choices", choices_color),
-            ("deleted_choices", choices_color),
+            ("choice_changes", choices_color),
             ("added_questions", survey_color),
             ("deleted_questions", survey_color),
-            ("modified_questions", survey_color)
+            ("modified_questions", survey_color),
+            ("settings", "#FFEB9C")
         ]
 
         # Write output file
@@ -155,9 +150,9 @@ class FormComparator:
                     worksheet.set_column(idx, idx, max_length + 2)
 
             # Apply color formatting
-            for sheet_name, df in sds_color:
+            for sheet_name, df, j in sds_color:
                 worksheet = writer.sheets[sheet_name]
-                worksheet = apply_color_format(worksheet, df, green_format, red_format, orange_format)
+                worksheet = apply_color_format(worksheet, df, green_format, red_format, orange_format, j)
 
             # Apply sheet label background color formatting
             for sheet_name, ccolor in slbls_color:
@@ -173,14 +168,14 @@ class FormComparator:
 
         return self._output_path
 
-def apply_color_format(worksheet, df, green_format, red_format, orange_format):
+def apply_color_format(worksheet, df, green_format, red_format, orange_format, j = 1):
 
     for row in range(1, len(df) + 1):  # Skip header row
-        status = df.iloc[row - 1, 1]
-        if status == "added":
+        status = df.iloc[row - 1, j]
+        if 'added' in status:
             worksheet.set_row(row, None, green_format)
-        elif status == "removed":
+        elif 'removed' in status:
             worksheet.set_row(row, None, red_format)
-        elif status == "modified":
+        elif 'modified' in status:
             worksheet.set_row(row, None, orange_format)
     return worksheet
