@@ -50,14 +50,14 @@ class FormComparator:
                 '=HYPERLINK("#choices!A1", "Choices list names")',
                 '=HYPERLINK("#choices!A1", "Choices names")',
                 '=HYPERLINK("#settings!A1", "Settings")'],
-             "Identical" : [
+             "Unchanged" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
                 len(self._group_names_df[self._group_names_df["status"] == "unchanged"]),
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "unchanged"]),
                 "",
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 len(self._choices_df[self._choices_df["status"] == "unchanged"]),
-                len(self._settings_df[self._settings_df["status"] == "identical"])],
+                len(self._settings_df[self._settings_df["status"] == "unchanged"])],
             "Added" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
                 len(self._group_names_df[self._group_names_df["status"] == "added"]),
@@ -83,7 +83,7 @@ class FormComparator:
                 "",
                 len(self._settings_df[self._settings_df["status"] == "modified"])]
         })
-        self._generic_df["Total"] = self._generic_df[["Identical", "Added", "Deleted", "Modified"]] \
+        self._generic_df["Total"] = self._generic_df[["Unchanged", "Added", "Deleted", "Modified"]] \
             .apply(lambda col: pd.to_numeric(col, errors='coerce').fillna(0).astype(int)).sum(axis=1)
 
         # List of sheets and corresponding DataFrame

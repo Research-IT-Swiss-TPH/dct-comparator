@@ -305,7 +305,7 @@ class Form:
             elif ref is None:
                 status = "removed"
             else:
-                status = "identical" if current == ref else "modified"
+                status = "unchanged" if current == ref else "modified"
 
             comparisons.append((attr, status, current, ref))
 
@@ -392,7 +392,7 @@ class Form:
                     ['removed'] * len(removed) +
                     ['likely_modified'] * len(modified0)
                 ),
-                "new_name": (
+                "modified_name": (
                     [''] * (len(unchanged) + len(added) + len(removed)) +
                     modified1
                 )
