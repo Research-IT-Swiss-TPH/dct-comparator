@@ -506,6 +506,47 @@ class Form:
         return out
 
     # Questions
+
+    def compareQuestions(self, f):
+
+        unchanged_df = self.detectUnchangedQuestions(f)
+        added_df = self.detectAddedQuestions(f)
+        removed_df = self.detectDeletedQuestions(f)
+
+        out = pd.concat([
+            unchanged_df,
+            added_df,
+            removed_df
+            ], join = "inner") \
+            .sort_values(by=["row"], ascending=[True])
+        
+        return out
+
+    def detectUnchangedQuestions(self, f):
+
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
+                       on = "name",
+                       how = 'outer')
+        out = out[out["label_x"].notnull() & out["label_y"].notnull()]
+
+        if (out.shape[0] == 0):
+            out = None
+        else:
+            out = out.reset_index(drop = True)
+            
+            out = out[[
+                "index_y",
+                "name",
+                "type_y",
+                "label_y"]] \
+                    .rename(columns = {"index_y": "row",
+                                       "type_y": "type",
+                                       "label_y": "label"}) \
+                    .astype({'row':'int'})
+            out["status"] = "unchanged"
+        
+        return out
     
     def detectAddedQuestions(self, f):
 
@@ -536,6 +577,7 @@ class Form:
                                    right_on=self._label,
                                    drop_unmatched = False,
                                    add_match_info = True)
+            out["status"] = "added"
             """ 
             print (out)
             out = out[["row",
@@ -596,6 +638,8 @@ class Form:
         #                 .fillna("") \
         #                 .reset_index(drop=True)
 
+        if out is not None:
+            out["status"] = "removed"
         if out is None:
             out = pd.DataFrame()
             
