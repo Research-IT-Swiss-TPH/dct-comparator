@@ -43,12 +43,12 @@ class FormComparator:
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
-                '=HYPERLINK("#survey_columns!A1", "Survey columns")',
-                '=HYPERLINK("#survey_group_names!A1", "Survey group names")',
-                "Survey repeat names",
-                "Survey questions",
-                "Choice list names",
-                '=HYPERLINK("#choice_changes!A1", "Choices")',
+                '=HYPERLINK("#survey_columns!A1", "Survey column names")',
+                '=HYPERLINK("#survey_groups!A1", "Survey group names")',
+                '=HYPERLINK("#survey_repeats!A1", "Survey repeat names")',
+                '=HYPERLINK("#added_questions!A1", "Survey questions")',
+                '=HYPERLINK("#choices!A1", "Choices list names")',
+                '=HYPERLINK("#choices!A1", "Choices names")',
                 '=HYPERLINK("#settings!A1", "Settings")'],
              "Identical" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
@@ -90,9 +90,9 @@ class FormComparator:
         sds = [
             ("overview", self._generic_df),
             ("survey_columns", self._survey_columns_df),
-            ("survey_group_names", self._group_names_df),
-            ("survey_repeat_names", self._repeat_names_df),
-            ("choice_changes", self._choices_df),
+            ("survey_groups", self._group_names_df),
+            ("survey_repeats", self._repeat_names_df),
+            ("choices", self._choices_df),
             ("added_questions", self._added_questions_df),
             ("deleted_questions", self._deleted_questions_df),
             ("modified_questions", self._major_mod_questions_df),
@@ -101,8 +101,8 @@ class FormComparator:
 
         sds_color = [
             ("survey_columns", self._survey_columns_df, 1),
-            ("survey_group_names", self._group_names_df, 1),
-            ("choice_changes", self._choices_df, 3),
+            ("survey_groups", self._group_names_df, 1),
+            ("choices", self._choices_df, 3),
             ("settings", self._settings_df, 1)
         ]
 
@@ -111,9 +111,9 @@ class FormComparator:
         slbls_color = [
             ("overview", "#FFEB9C"),
             ("survey_columns", survey_color),
-            ("survey_group_names", survey_color),
-            ("survey_repeat_names", survey_color),
-            ("choice_changes", choices_color),
+            ("survey_groups", survey_color),
+            ("survey_repeats", survey_color),
+            ("choices", choices_color),
             ("added_questions", survey_color),
             ("deleted_questions", survey_color),
             ("modified_questions", survey_color),
