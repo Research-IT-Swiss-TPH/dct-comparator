@@ -18,16 +18,6 @@ stop_words.discard("how")
 stop_words.discard("when")
 stop_words.discard("why")
 
-def get_normalized_edit_distance(s1, s2):
-
-    """Compute normalized edit distance (Levenshtein distance)."""
-    try:
-        edit_distance = Levenshtein.distance(s1, s2)
-        edit_distance /= max(len(s1), len(s2))
-    except:
-        edit_distance = 1.0
-    return edit_distance
-
 def find_common_words(df, lbl_col):
     full_text = ""
     df = df[df[lbl_col].notnull()]
@@ -400,9 +390,9 @@ class Form:
                     ['unchanged'] * len(unchanged) +
                     ['added'] * len(added) +
                     ['removed'] * len(removed) +
-                    ['modified'] * len(modified0)
+                    ['likely_modified'] * len(modified0)
                 ),
-                "modified_name": (
+                "new_name": (
                     [''] * (len(unchanged) + len(added) + len(removed)) +
                     modified1
                 )
@@ -617,7 +607,7 @@ class Form:
                        right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'inner')
-        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), axis = 1)
+        out["edit_distance"] = out.apply(lambda row: Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), axis = 1)
 
         # Major modifications
         major = out[(out["label_x"].notnull()) & (out["edit_distance"] > 0.2)]
@@ -659,7 +649,7 @@ class Form:
                        right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'inner')
-        out["edit_distance"] = out.apply(lambda row: get_normalized_edit_distance(s1 = row["type_x"], s2 = row["type_y"]), axis = 1)
+        out["edit_distance"] = out.apply(lambda row: Form.get_normalized_edit_distance(s1 = row["type_x"], s2 = row["type_y"]), axis = 1)
 
         out = out[(out["type_x"].notnull()) & (out["edit_distance"] > 0)]
         out = out.reset_index(drop = True)

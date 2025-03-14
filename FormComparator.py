@@ -64,7 +64,7 @@ class FormComparator:
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
                 len(self._added_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
-                len(self._choices_df[self._choices_df["status"].str.contains("added", na=False)]),
+                len(self._choices_df[self._choices_df["status"].str.contains("added", na = False)]),
                 len(self._settings_df[self._settings_df["status"] == "added"])],
             "Deleted": [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
@@ -72,10 +72,10 @@ class FormComparator:
                 len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
                 len(self._deleted_questions_df),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
-                len(self._choices_df[self._choices_df["status"].str.contains("removed", na=False)]),
+                len(self._choices_df[self._choices_df["status"].str.contains("removed", na = False)]),
                 len(self._settings_df[self._settings_df["status"] == "removed"])],
             "Modified": [
-                len(self._survey_columns_df[self._survey_columns_df["status"] == "modified"]),
+                len(self._survey_columns_df[self._survey_columns_df["status"].str.contains("modified", na = False)]),
                 "",
                 "",
                 len(self._major_mod_questions_df),
