@@ -75,7 +75,7 @@ class FormComparator:
                 len(self._choices_df[self._choices_df["status"].str.contains("removed", na=False)]),
                 len(self._settings_df[self._settings_df["status"] == "removed"])],
             "Modified": [
-                "",
+                len(self._survey_columns_df[self._survey_columns_df["status"] == "modified"]),
                 "",
                 "",
                 len(self._major_mod_questions_df),

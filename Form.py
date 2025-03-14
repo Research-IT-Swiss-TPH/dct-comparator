@@ -19,6 +19,8 @@ stop_words.discard("when")
 stop_words.discard("why")
 
 def get_normalized_edit_distance(s1, s2):
+
+    """Compute normalized edit distance (Levenshtein distance)."""
     try:
         edit_distance = Levenshtein.distance(s1, s2)
         edit_distance /= max(len(s1), len(s2))
@@ -101,7 +103,16 @@ class Form:
 
         try:
             self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
-            dims = self._survey_df.shape 
+            dims = self._survey_df.shape
+            self._survey_lang_columns = [
+                "label",
+                "hint", 
+                "guidance_hint", 
+                "constraint_message", 
+                "required_message",
+                "image",
+                "audio",
+                "video"]
             print("\t - ℹ️ survey sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
         except ValueError:
             self._survey_df = None
@@ -182,6 +193,9 @@ class Form:
         questions = questions[(questions["type"] != "begin_group") & (questions["type"] != "end_group")]
         self._questions = questions.reset_index(drop=True)
 
+        # Load survey columns
+        self._choices_columns = self._choices_df.columns.tolist()
+
         # Common words
         self._common_words = find_common_words(self._questions, self._label)
 
@@ -192,6 +206,10 @@ class Form:
     @property
     def survey_columns(self):
         return self._survey_columns
+
+    @property
+    def survey_lang_columns(self):
+        return self._survey_lang_columns
 
     @property
     def group_names(self):
@@ -260,6 +278,10 @@ class Form:
     @property
     def questions(self):
         return self._questions
+
+    @property
+    def choices_columns(self):
+        return self._choices_columns
     
     """This method is intended to return the parent of the form. However, the parent attribute (_parent) is not set within the class, so this method may not provide the expected functionality without additional implementation."""
     
@@ -307,27 +329,84 @@ class Form:
         unchanged = list(current_set & reference_set)
         added = list(current_set - reference_set)
         removed = list(reference_set - current_set)
+        
         return unchanged, added, removed
 
     @staticmethod
-    def summariseChanges(current, reference):
+    def summariseChanges(current, reference, modified = []):
 
         """Static method to compare names and return a DataFrame."""
         unchanged, added, removed = Form.detectChanges(current, reference)
         return pd.DataFrame({
-            "name": unchanged + added + removed,
+            "name": unchanged + added + removed + modified,
             "status": (
                 ['unchanged'] * len(unchanged) +
                 ['added'] * len(added) +
-                ['removed'] * len(removed)
+                ['removed'] * len(removed) +
+                ['modified'] * len(modified)
             )
         }).sort_values(by="name", ascending=True)
+
+    @staticmethod
+    def get_normalized_edit_distance(s1, s2):
+
+        """Compute normalized edit distance (Levenshtein distance)."""
+        try:
+            edit_distance = Levenshtein.distance(s1, s2)
+            edit_distance /= max(len(s1), len(s2))
+        except:
+            edit_distance = 1.0
+        return edit_distance
 
     # Survey columns
 
     def compareSurveyColumns(self, f):
 
-        return self.summariseChanges(self._survey_columns, f.survey_columns)
+        """Compare survey columns with custom logic for modified items."""
+        unchanged, added, removed = Form.detectChanges(self._survey_columns, f.survey_columns)
+
+         # Detect modified items (based on shared prefix)
+        modified = []
+        thres = 0.5
+        for removed_item in removed[:]:
+            if any(word in removed_item for word in self.survey_lang_columns): 
+                rsplit = removed_item.split("::")
+                for added_item in added[:]:
+                        asplit = added_item.split("::")
+                        if (rsplit[0] == asplit[0]):
+                            if len(rsplit) > 1 and len(asplit) > 1:
+                                d = Form.get_normalized_edit_distance(rsplit[1],asplit[1])
+                                if d < thres:
+                                    modified.append((removed_item, added_item))
+                                    removed.remove(removed_item)
+                                    added.remove(added_item)
+                            break
+
+        if modified == []:
+            return pd.DataFrame({
+                "name": unchanged + added + removed,
+                "status": (
+                    ['unchanged'] * len(unchanged) +
+                    ['added'] * len(added) +
+                    ['removed'] * len(removed)
+                )
+            }).sort_values(by="name", ascending=True)
+        else:
+            modified0 = [item[0] for item in modified]
+            modified1 = [item[1] for item in modified]
+            return pd.DataFrame({
+                "name": unchanged + added + removed + modified0,
+                "status": (
+                    ['unchanged'] * len(unchanged) +
+                    ['added'] * len(added) +
+                    ['removed'] * len(removed) +
+                    ['modified'] * len(modified0)
+                ),
+                "modified_name": (
+                    [''] * (len(unchanged) + len(added) + len(removed)) +
+                    modified1
+                )
+            }).sort_values(by="name", ascending=True)
 
     # Survey group names
 
@@ -347,6 +426,10 @@ class Form:
 
         return self.summariseChanges(self._list_names, f.list_names)
 
+    def compareChoicesColumns(self, f):
+
+        return self.summariseChanges(self._choices_columns, f.choices_columns)
+
     def compareChoices(self, f):
 
         unchanged_df = self.detectUnchangedChoices(f)
@@ -358,7 +441,7 @@ class Form:
         
         return out
 
-    def detectUnchangedChoices(self, f):
+    def detectUnchangedChoices(self, f, col = None):
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
                        right = f.choices.rename(columns = {f.main_label: "label"}),
@@ -370,9 +453,17 @@ class Form:
             out = None
         else:
             out = out.reset_index(drop = True)
-            out["status"] = "unchanged"
-            out = out[["list_name", "name", "label_x", "status", "label_y"]] \
-                .rename(columns={'label_x': 'label'})
+            
+            if col is not None:
+                out1 = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
+                                right = f.choices.rename(columns = {f.main_label: "label"}),
+                                on = ["list_name", "name"],
+                                how = 'outer')
+                out1 = out1[out1["label_x"].notnull() & out1["label_y"].notnull()]
+            else:
+                out["status"] = "unchanged"
+                out = out[["list_name", "name", "label_x", "status", "label_y"]] \
+                    .rename(columns={'label_x': 'label'})
         
         return out
 
