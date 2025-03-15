@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import os
 import string
 import Levenshtein
@@ -163,12 +164,13 @@ class Form:
 
         # Load questions
         questions = self._survey_df[self._survey_df["name"].notnull()]
-        questions = questions[questions["type"] != "note"]
+        self._notes = questions[questions["type"] == "note"]
+        #questions = questions[questions["type"] != "note"]
         questions = questions[["index",
                                "type",
                                "name",
                                self._label]]
-        questions[self._label] = questions.apply(lambda row: process_label(row[self._label]), axis = 1)
+        #questions[self._label] = questions.apply(lambda row: process_label(row[self._label]), axis = 1)
         questions = questions.assign(group_id = "",
                                      group_lbl = "")
         group_ids = [0]
@@ -180,7 +182,7 @@ class Form:
                     group_ids = group_ids[:-1]
             else:
                 questions.loc[index, "group_id"] = group_ids[-1]
-        questions = questions[(questions["type"] != "begin_group") & (questions["type"] != "end_group")]
+        questions = questions[~questions["type"].isin(["begin_group", "begin group", "begin_repeat", "begin repeat", "end_group", "end group", "end_repeat", "end repeat"])]
         self._questions = questions.reset_index(drop=True)
 
         # Load survey columns
@@ -428,10 +430,10 @@ class Form:
 
         out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
             .sort_values(by=["list_name", "name"], ascending=[True, True], key = lambda x: x.str.lower())
-        
-        return out
 
-    def detectUnchangedChoices(self, f, col = None):
+        return out[["list_name", "name", "status", "current_label", "reference_label"]]
+
+    def detectUnchangedChoices(self, f):
 
         out = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
                        right = f.choices.rename(columns = {f.main_label: "label"}),
@@ -443,17 +445,14 @@ class Form:
             out = None
         else:
             out = out.reset_index(drop = True)
+
+            out["status"] = out.apply(lambda row: "unchanged" if Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]) == 0 else "modified_label", axis = 1)
             
-            if col is not None:
-                out1 = pd.merge(left = self._choices_df.rename(columns = {self._label: "label"}),
-                                right = f.choices.rename(columns = {f.main_label: "label"}),
-                                on = ["list_name", "name"],
-                                how = 'outer')
-                out1 = out1[out1["label_x"].notnull() & out1["label_y"].notnull()]
-            else:
-                out["status"] = "unchanged"
-                out = out[["list_name", "name", "label_x", "status", "label_y"]] \
-                    .rename(columns={'label_x': 'label'})
+            out = out[["list_name", "name", "label_x", "label_y", "status"]] \
+                .rename(columns={
+                    'label_x': 'current_label',
+                    'label_y': 'reference_label'
+                    })
         
         return out
 
@@ -475,9 +474,12 @@ class Form:
             out = out.reset_index(drop = True)
 
             # Different flag if the list_name has actually been added
-            out = out[["list_name", "name", "label_x"]] \
+            out = out[["list_name", "name", "label_x", "label_y"]] \
                 .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
-                .rename(columns={'label_x': 'label'})
+                .rename(columns={
+                    'label_x': 'current_label',
+                    'label_y': 'reference_label'
+                    })
         
         return out
 
@@ -499,9 +501,12 @@ class Form:
             out = out.reset_index(drop = True)
 
             # Different flag if the list_name has actually been removed
-            out = out[["list_name", "name", "label_y"]] \
+            out = out[["list_name", "name", "label_x", "label_y"]] \
                 .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
-                .rename(columns={'label_y': 'label'})
+                .rename(columns={
+                    'label_x': 'current_label',
+                    'label_y': 'reference_label'
+                    })
 
         return out
 
@@ -513,14 +518,10 @@ class Form:
         added_df = self.detectAddedQuestions(f)
         removed_df = self.detectDeletedQuestions(f)
 
-        out = pd.concat([
-            unchanged_df,
-            added_df,
-            removed_df
-            ], join = "inner") \
-            .sort_values(by=["row"], ascending=[True])
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+            .sort_values(by=["order"], ascending=[True])
         
-        return out
+        return out[["name", "status", "label_dist", "current_label", "reference_label", "order"]]
 
     def detectUnchangedQuestions(self, f):
 
@@ -534,85 +535,24 @@ class Form:
             out = None
         else:
             out = out.reset_index(drop = True)
-            
-            out = out[[
-                "index_y",
-                "name",
-                "type_y",
-                "label_y"]] \
-                    .rename(columns = {"index_y": "row",
-                                       "type_y": "type",
-                                       "label_y": "label"}) \
-                    .astype({'row':'int'})
-            out["status"] = "unchanged"
+            out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
+            out["label_dist"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), 2), axis = 1)
+            out["status"] = out.apply(lambda row: "unchanged" if row["label_dist"] == 0 else "modified", axis = 1)
+            out = out[["order", "name", "type_y", "label_x", "label_y", "status", "label_dist"]] \
+                    .rename(columns = {"type_y": "type",
+                                       'label_x': 'current_label',
+                                       'label_y': 'reference_label'})
         
         return out
-    
+
     def detectAddedQuestions(self, f):
 
         out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
                        right = f.questions.rename(columns = {f.main_label: "label"}),
                        on = "name",
                        how = 'outer')
-        out = out[out["type_x"].isnull() & out["type_y"].notnull()]
-        out = out.reset_index(drop = True)
-        out = out[["index_y",
-                   "name",
-                   "type_y",
-                   "label_y"]] \
-                    .rename(columns = {"index_y": "row",
-                                       "type_y": "type",
-                                       "label_y": "label"}) \
-                    .astype({'row':'int'})
-
-        if (out.shape[0] == 0):
-            out = None
-
-        if out is not None:
-            tmp = self._questions.copy(deep=True)
-            tmp = tmp[tmp[self._label].notnull()]
-            out = skrub.fuzzy_join(out[["row", "name", "label"]],
-                                   tmp[["index", "name", self._label]],
-                                   left_on='label',
-                                   right_on=self._label,
-                                   drop_unmatched = False,
-                                   add_match_info = True)
-            out["status"] = "added"
-            """ 
-            print (out)
-            out = out[["row",
-                       "name_x",
-                      "label",
-                      "name_y",
-                      self._label,
-                      "matching_score"]] \
-                      .rename(columns = {"name_x": "name",
-                                         "name_y": "name_of_closest_lbl",
-                                         self._label: "closest_lbl"}) \
-                      .fillna("") \
-                      .reset_index(drop=True)
-            """
-
-        return out
-    
-    def detectDeletedQuestions(self, f):
-
-        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.questions.rename(columns = {f.main_label: "label"}),
-                       on = "name",
-                       how = 'outer')
         out = out[out["type_x"].notnull() & out["type_y"].isnull()]
-        out = out.reset_index(drop = True)
-        out = out[["index_x",
-                   "name",
-                   "type_x",
-                   "label_x",
-                   "group_id_x",
-                   "group_lbl_x"]] \
-                   .rename(columns = {"index_x": "row",
-                                       "type_x": "type",
-                                       "label_x": "label"}) \
-                   .astype({'row':'int'})
+        
         if (out.shape[0] == 0):
             out = None
 
@@ -638,11 +578,61 @@ class Form:
         #                 .fillna("") \
         #                 .reset_index(drop=True)
 
-        if out is not None:
-            out["status"] = "removed"
-        if out is None:
-            out = pd.DataFrame()
+        else:
+            out = out.reset_index(drop = True)
+            out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
+            out = out[["order", "name", "type_x", "label_x", "label_y", "group_id_x", "group_lbl_x"]] \
+                    .rename(columns = {"type_x": "type",
+                                       'label_x': 'current_label',
+                                       'label_y': 'reference_label'})
+            out["status"] = "added"
+            out["label_dist"] = 0
             
+        return out
+    
+    def detectDeletedQuestions(self, f):
+
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
+                       right = f.questions.rename(columns = {f.main_label: "label"}),
+                       on = "name",
+                       how = 'outer')
+        out = out[out["type_x"].isnull() & out["type_y"].notnull()]
+
+        if (out.shape[0] == 0):
+            out = None
+        else:
+            # tmp = self._questions.copy(deep=True)
+            # tmp = tmp[tmp[self._label].notnull()]
+            # out = skrub.fuzzy_join(out[["row", "name", "label"]],
+            #                        tmp[["index", "name", self._label]],
+            #                        left_on='label',
+            #                        right_on=self._label,
+            #                        drop_unmatched = False,
+            #                        add_match_info = True)
+            out = out.reset_index(drop = True)
+            out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
+            out = out[["order", "name", "type_y", "label_x", "label_y"]] \
+                        .rename(columns = {"index_y": "row",
+                                        "type_y": "type",
+                                        'label_x': 'current_label',
+                                        'label_y': 'reference_label'}) 
+            out["status"] = "removed"
+            out["label_dist"] = 0
+            """ 
+            print (out)
+            out = out[["row",
+                       "name_x",
+                      "label",
+                      "name_y",
+                      self._label,
+                      "matching_score"]] \
+                      .rename(columns = {"name_x": "name",
+                                         "name_y": "name_of_closest_lbl",
+                                         self._label: "closest_lbl"}) \
+                      .fillna("") \
+                      .reset_index(drop=True)
+            """
+
         return out
     
     def detectModifiedLabels(self, f):

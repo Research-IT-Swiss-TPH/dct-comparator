@@ -37,7 +37,6 @@ class FormComparator:
         self._list_name_df                                         = cur_form.compareListNames(ref_form)
         self._choices_df                                           = cur_form.compareChoices(ref_form)
         self._survey_questions_df                                  = cur_form.compareQuestions(ref_form)
-        self._major_mod_questions_df, self._minor_mod_questions_df = cur_form.detectModifiedLabels(ref_form)
 
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
@@ -77,9 +76,9 @@ class FormComparator:
                 len(self._survey_columns_df[self._survey_columns_df["status"].str.contains("modified", na = False)]),
                 "",
                 "",
-                len(self._major_mod_questions_df),
+                len(self._survey_questions_df[self._survey_questions_df["status"].str.contains("modified", na = False)]),
                 "",
-                "",
+                len(self._choices_df[self._choices_df["status"].str.contains("modified", na = False)]),
                 len(self._settings_df[self._settings_df["status"] == "modified"])]
         })
         self._generic_df["Total"] = self._generic_df[["Unchanged", "Added", "Deleted", "Modified"]] \
@@ -92,7 +91,6 @@ class FormComparator:
             ("survey_columns", self._survey_columns_df),
             ("survey_groups", self._group_names_df),
             ("survey_repeats", self._repeat_names_df),
-            ("modified_questions", self._major_mod_questions_df),
             ("choices", self._choices_df),
             ("settings", self._settings_df)
         ]
@@ -100,8 +98,8 @@ class FormComparator:
         sds_color = [
             ("survey_columns", self._survey_columns_df, 1),
             ("survey_groups", self._group_names_df, 1),
-            ("choices", self._choices_df, 3),
-            ("survey_questions", self._survey_questions_df, 3),
+            ("choices", self._choices_df, 2),
+            ("survey_questions", self._survey_questions_df, 1),
             ("settings", self._settings_df, 1)
         ]
 
@@ -116,7 +114,6 @@ class FormComparator:
             ("survey_repeats", survey_color),
             ("choices", choices_color),
             ("survey_questions", survey_color),
-            ("modified_questions", survey_color),
             ("settings", settings_color)
         ]
 
