@@ -325,6 +325,40 @@ class Form:
         return unchanged, added, removed
 
     @staticmethod
+    def detectOrderedChanges(current, reference):
+
+        # Convert the lists into DataFrames, adding an index to preserve the order
+        current_df = pd.DataFrame({'name': current, 'Source': 'current'})
+        reference_df = pd.DataFrame({'name': reference, 'Source': 'reference'})
+
+        # Perform an outer merge on 'name', while keeping the index for order preservation
+        merged_df = pd.merge(reference_df, current_df, on='name', how='left', suffixes=('_reference', '_current'))
+        merged_df["status"] = merged_df.apply(lambda row: "removed" if pd.isna(row["Source_current"]) else "", axis = 1)
+        merged_df1a = merged_df.reset_index(drop = False)
+        merged_df1b = merged_df[merged_df["status"] == ""]
+        merged_df1b = merged_df1b.reset_index(drop = True).reset_index(drop = False)
+        merged_df1c = pd.merge(merged_df1a, merged_df1b, on='name', how='outer')
+        merged_df1c = merged_df1c.sort_values(by = ["index_x"])
+        merged_df1c = merged_df1c[["name", "status_x", "index_x", "index_y"]].rename(columns = {'status_x': 'status', "index_y": "index", "index_x": "order"})
+        
+        merged_df2 = pd.merge(current_df, reference_df, on='name', how='left', suffixes=('_current', '_reference'))
+        merged_df2["status"] = merged_df2.apply(lambda row: "added" if pd.isna(row["Source_reference"]) else "", axis = 1)
+        merged_df2a = merged_df2.reset_index(drop = False)
+        merged_df2b = merged_df2[merged_df2["status"] == ""]
+        merged_df2b = merged_df2b.reset_index(drop = True).reset_index(drop = False)
+        merged_df2c = pd.merge(merged_df2a, merged_df2b, on='name', how='outer')
+        merged_df2c = merged_df2c.sort_values(by = ["index_x"])
+        merged_df2c = merged_df2c[["name", "status_x", "index_x", "index_y"]].rename(columns = {'status_x': 'status',"index_y": "index", "index_x": "order"})
+
+        merged_df3 = pd.merge(merged_df1c, merged_df2c, on='name', how = "outer", suffixes=('_rem', '_add'))
+        merged_df3["status"] = merged_df3['status_rem'].fillna(merged_df3['status_add'])
+        merged_df3["order"] = merged_df3.apply(lambda row: np.nanmean([row["order_rem"], row["order_add"]]), axis = 1)
+        merged_df3["status"] = merged_df3.apply(lambda row: "unchanged" if (row["index_rem"] == row["index_add"]) and (row["status"] == "") else "moved" if (row["status"] == "") else row["status"], axis = 1)
+        merged_df3 = merged_df3.sort_values(by = ["order_add"])
+        
+        return merged_df3[["name", "status"]].reset_index(drop = True)
+
+    @staticmethod
     def summariseChanges(current, reference, modified = []):
 
         """Static method to compare names and return a DataFrame."""
@@ -337,7 +371,7 @@ class Form:
                 ['removed'] * len(removed) +
                 ['modified'] * len(modified)
             )
-        }).sort_values(by="name", ascending=True)
+        })#.sort_values(by="name", ascending=True)
 
     @staticmethod
     def get_normalized_edit_distance(s1, s2):
@@ -402,15 +436,16 @@ class Form:
 
     # Survey group names
 
-    def compareGroupNames(self, f):
+    def compareGroupRepeatNames(self, f):
 
-        return self.summariseChanges(self._group_names, f.group_names)
+        group_change_df = self.detectOrderedChanges(self._group_names, f.group_names)
+        group_change_df["type"] = "group"
+        repeat_change_df = self.detectOrderedChanges(self._repeat_names, f.repeat_names)
+        repeat_change_df["type"] = "repeat"
 
-    # Survey repeat names
+        out = pd.concat([group_change_df, repeat_change_df], join = "inner")
 
-    def compareRepeatNames(self, f):
-
-        return self.summariseChanges(self._repeat_names, f.repeat_names)
+        return out
 
     # Choice list names
 

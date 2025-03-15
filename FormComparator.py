@@ -32,8 +32,7 @@ class FormComparator:
 
         self._settings_df                                          = cur_form.compareSettings(ref_form)
         self._survey_columns_df                                    = cur_form.compareSurveyColumns(ref_form)
-        self._group_names_df                                       = cur_form.compareGroupNames(ref_form)
-        self._repeat_names_df                                      = cur_form.compareRepeatNames(ref_form)
+        self._group_repeat_names_df                                = cur_form.compareGroupRepeatNames(ref_form)
         self._list_name_df                                         = cur_form.compareListNames(ref_form)
         self._choices_df                                           = cur_form.compareChoices(ref_form)
         self._survey_questions_df                                  = cur_form.compareQuestions(ref_form)
@@ -41,33 +40,33 @@ class FormComparator:
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
-                '=HYPERLINK("#survey_columns!A1", "Survey column names")',
-                '=HYPERLINK("#survey_groups!A1", "Survey group names")',
-                '=HYPERLINK("#survey_repeats!A1", "Survey repeat names")',
-                '=HYPERLINK("#survey_questions!A1", "Survey question names")',
-                '=HYPERLINK("#choices!A1", "Choices list names")',
-                '=HYPERLINK("#choices!A1", "Choices names")',
-                '=HYPERLINK("#settings!A1", "Settings")'],
+                '=HYPERLINK("#\'📋 survey_columns\'!A1", "📋 Survey column names")',
+                '=HYPERLINK("#\'📋 survey_groups_repeats\'!A1", "📋 Survey group names")',
+                '=HYPERLINK("#\'📋 survey_groups_repeats\'!A1", "📋 Survey repeat names")',
+                '=HYPERLINK("#\'📋 survey_questions\'!A1", "📋 Survey question names")',
+                '=HYPERLINK("#\'🔘 choices\'!A1", "🔘 Choices list names")',
+                '=HYPERLINK("#\'🔘 choices\'!A1", "🔘 Choices names")',
+                '=HYPERLINK("#\'⚙️ settings\'!A1", "⚙️ Settings")'],
              "Unchanged" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
-                len(self._group_names_df[self._group_names_df["status"] == "unchanged"]),
-                len(self._repeat_names_df[self._repeat_names_df["status"] == "unchanged"]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged") & (self._group_repeat_names_df["type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged") & (self._group_repeat_names_df["type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "unchanged"]),
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 len(self._choices_df[self._choices_df["status"] == "unchanged"]),
                 len(self._settings_df[self._settings_df["status"] == "unchanged"])],
             "Added" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
-                len(self._group_names_df[self._group_names_df["status"] == "added"]),
-                len(self._repeat_names_df[self._repeat_names_df["status"] == "added"]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added") & (self._group_repeat_names_df["type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added") & (self._group_repeat_names_df["type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "added"]),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
                 len(self._choices_df[self._choices_df["status"].str.contains("added", na = False)]),
                 len(self._settings_df[self._settings_df["status"] == "added"])],
             "Deleted": [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
-                len(self._group_names_df[self._group_names_df["status"] == "removed"]),
-                len(self._repeat_names_df[self._repeat_names_df["status"] == "removed"]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed") & (self._group_repeat_names_df["type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed") & (self._group_repeat_names_df["type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "removed"]),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
                 len(self._choices_df[self._choices_df["status"].str.contains("removed", na = False)]),
@@ -87,20 +86,19 @@ class FormComparator:
         # List of sheets and corresponding DataFrame
         sds = [
             ("👁️ overview", self._generic_df),
-            ("survey_questions", self._survey_questions_df),
-            ("survey_columns", self._survey_columns_df),
-            ("survey_groups", self._group_names_df),
-            ("survey_repeats", self._repeat_names_df),
-            ("choices", self._choices_df),
-            ("settings", self._settings_df)
+            ("📋 survey_questions", self._survey_questions_df),
+            ("📋 survey_columns", self._survey_columns_df),
+            ("📋 survey_groups_repeats", self._group_repeat_names_df),
+            ("🔘 choices", self._choices_df),
+            ("⚙️ settings", self._settings_df)
         ]
 
         sds_color = [
-            ("survey_columns", self._survey_columns_df, 1),
-            ("survey_groups", self._group_names_df, 1),
-            ("choices", self._choices_df, 2),
-            ("survey_questions", self._survey_questions_df, 1),
-            ("settings", self._settings_df, 1)
+            ("📋 survey_columns", self._survey_columns_df, 1),
+            ("📋 survey_groups_repeats", self._group_repeat_names_df, 1),
+            ("🔘 choices", self._choices_df, 2),
+            ("📋 survey_questions", self._survey_questions_df, 1),
+            ("⚙️ settings", self._settings_df, 1)
         ]
 
         overview_color = "#F7DC6F"
@@ -109,12 +107,11 @@ class FormComparator:
         settings_color = "#F5B041"
         slbls_color = [
             ("👁️ overview", overview_color),
-            ("survey_columns", survey_color),
-            ("survey_groups", survey_color),
-            ("survey_repeats", survey_color),
-            ("choices", choices_color),
-            ("survey_questions", survey_color),
-            ("settings", settings_color)
+            ("📋 survey_columns", survey_color),
+            ("📋 survey_groups_repeats", survey_color),
+            ("🔘 choices", choices_color),
+            ("📋 survey_questions", survey_color),
+            ("⚙️ settings", settings_color)
         ]
 
         # Write output file
