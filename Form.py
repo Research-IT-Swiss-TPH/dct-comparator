@@ -5,6 +5,7 @@ import string
 import Levenshtein
 import re
 import nltk
+from collections import OrderedDict
 nltk.download('punkt_tab')
 #nltk.download('punkt')
 nltk.download('stopwords')
@@ -93,7 +94,8 @@ class Form:
         print(f"📝 Create Form object from {os.path.basename(in_xlsx)}")
 
         try:
-            self._survey_df   = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
+            self._survey_df = pd.read_excel(in_xlsx, sheet_name="survey").reset_index()
+            self._survey_df = self._survey_df[self._survey_df["type"].notnull()]
             dims = self._survey_df.shape
             self._survey_lang_columns = [
                 "label",
@@ -162,27 +164,47 @@ class Form:
         # Load survey repeat names
         self._repeat_names = self._survey_df[self._survey_df["type"].isin(["begin repeat", "begin_repeat"])]["name"].tolist()
 
+        # Parse groups in an ordered dictionary
+        self._group_od = OrderedDict()
+        stack = []
+        current = self._group_od
+        # Initialize a list to hold questions with their group info
+        questions_with_group_info = []
+        # Iterate through the survey DataFrame to build the group structure and assign group to questions
+        for _, row in self._survey_df.iterrows():
+
+            if row["type"] == "begin group":
+                # Create a new group and add it to the stack
+                new_group = OrderedDict()
+                current[row["name"]] = new_group
+                stack.append(current)
+                current = new_group
+            elif row["type"] == "end group":
+                # Pop the group from the stack
+                current = stack.pop()
+            else:
+                # For all questions, assign the current group_id
+                row1 = row.copy()
+                row1["group_id"] = next(iter(stack[-1].keys())) if stack else None  # Current group in stack
+                # Append the question with the group info
+                questions_with_group_info.append(row1.to_dict())
+
+        # Convert the group info into a DataFrame
+        res, _ = Form.extract_groups(self._group_od)
+        self._group_df = pd.DataFrame(res)
+
         # Load questions
-        questions = self._survey_df[self._survey_df["name"].notnull()]
+        questions = pd.DataFrame(questions_with_group_info)
+
         self._notes = questions[questions["type"] == "note"]
-        #questions = questions[questions["type"] != "note"]
         questions = questions[["index",
                                "type",
                                "name",
+                               "group_id",
                                self._label]]
         #questions[self._label] = questions.apply(lambda row: process_label(row[self._label]), axis = 1)
-        questions = questions.assign(group_id = "",
-                                     group_lbl = "")
-        group_ids = [0]
-        for index, row in questions.iterrows():
-            if row["type"] == "begin_group":
-                group_ids.append(row["name"]) # Append the name to the list 'g'
-            elif row["type"] == "end_group":
-                if len(group_ids) > 1:
-                    group_ids = group_ids[:-1]
-            else:
-                questions.loc[index, "group_id"] = group_ids[-1]
-        questions = questions[~questions["type"].isin(["begin_group", "begin group", "begin_repeat", "begin repeat", "end_group", "end group", "end_repeat", "end repeat"])]
+
+        #questions = questions[~questions["type"].isin(["begin_group", "begin group", "begin_repeat", "begin repeat", "end_group", "end group", "end_repeat", "end repeat"])]
         self._questions = questions.reset_index(drop=True)
 
         # Load survey columns
@@ -202,6 +224,14 @@ class Form:
     @property
     def survey_lang_columns(self):
         return self._survey_lang_columns
+
+    @property
+    def group_od(self):
+        return self._group_od
+
+    @property
+    def groups(self):
+        return self._group_df
 
     @property
     def group_names(self):
@@ -314,6 +344,33 @@ class Form:
         return pd.DataFrame(comparisons, columns=["variable", "status", "current", "ref"])
 
     @staticmethod
+    def extract_groups(d, parent = None, depth = 0, results = None, order = 0, group_id = 0):
+        
+        if results is None:
+            results = []
+            
+        for i, (key, value) in enumerate(d.items()):
+
+            current_id = group_id  # Assign the current node ID
+
+            # Append the current group with depth, parent, and order within parent
+            results.append({
+                'group_id': current_id,
+                'name': key,
+                'parent': parent,
+                'depth': depth,
+                'order': i
+            })
+            
+            # Recur for nested dictionaries
+            if isinstance(value, dict):
+                _, group_id = Form.extract_groups(value, parent = key, depth = depth + 1, results = results, group_id = group_id + 1)
+            else:
+                group_id += 1
+        
+        return results, group_id
+
+    @staticmethod
     def detectChanges(current, reference):
 
         """Static method to detect unchanged, added, and removed items in lists."""
@@ -323,40 +380,6 @@ class Form:
         removed = list(reference_set - current_set)
         
         return unchanged, added, removed
-
-    @staticmethod
-    def detectOrderedChanges(current, reference):
-
-        # Convert the lists into DataFrames, adding an index to preserve the order
-        current_df = pd.DataFrame({'name': current, 'Source': 'current'})
-        reference_df = pd.DataFrame({'name': reference, 'Source': 'reference'})
-
-        # Perform an outer merge on 'name', while keeping the index for order preservation
-        merged_df = pd.merge(reference_df, current_df, on='name', how='left', suffixes=('_reference', '_current'))
-        merged_df["status"] = merged_df.apply(lambda row: "removed" if pd.isna(row["Source_current"]) else "", axis = 1)
-        merged_df1a = merged_df.reset_index(drop = False)
-        merged_df1b = merged_df[merged_df["status"] == ""]
-        merged_df1b = merged_df1b.reset_index(drop = True).reset_index(drop = False)
-        merged_df1c = pd.merge(merged_df1a, merged_df1b, on='name', how='outer')
-        merged_df1c = merged_df1c.sort_values(by = ["index_x"])
-        merged_df1c = merged_df1c[["name", "status_x", "index_x", "index_y"]].rename(columns = {'status_x': 'status', "index_y": "index", "index_x": "order"})
-        
-        merged_df2 = pd.merge(current_df, reference_df, on='name', how='left', suffixes=('_current', '_reference'))
-        merged_df2["status"] = merged_df2.apply(lambda row: "added" if pd.isna(row["Source_reference"]) else "", axis = 1)
-        merged_df2a = merged_df2.reset_index(drop = False)
-        merged_df2b = merged_df2[merged_df2["status"] == ""]
-        merged_df2b = merged_df2b.reset_index(drop = True).reset_index(drop = False)
-        merged_df2c = pd.merge(merged_df2a, merged_df2b, on='name', how='outer')
-        merged_df2c = merged_df2c.sort_values(by = ["index_x"])
-        merged_df2c = merged_df2c[["name", "status_x", "index_x", "index_y"]].rename(columns = {'status_x': 'status',"index_y": "index", "index_x": "order"})
-
-        merged_df3 = pd.merge(merged_df1c, merged_df2c, on='name', how = "outer", suffixes=('_rem', '_add'))
-        merged_df3["status"] = merged_df3['status_rem'].fillna(merged_df3['status_add'])
-        merged_df3["order"] = merged_df3.apply(lambda row: np.nanmean([row["order_rem"], row["order_add"]]), axis = 1)
-        merged_df3["status"] = merged_df3.apply(lambda row: "unchanged" if (row["index_rem"] == row["index_add"]) and (row["status"] == "") else "moved" if (row["status"] == "") else row["status"], axis = 1)
-        merged_df3 = merged_df3.sort_values(by = ["order_add"])
-        
-        return merged_df3[["name", "status"]].reset_index(drop = True)
 
     @staticmethod
     def summariseChanges(current, reference, modified = []):
@@ -438,12 +461,53 @@ class Form:
 
     def compareGroupRepeatNames(self, f):
 
-        group_change_df = self.detectOrderedChanges(self._group_names, f.group_names)
-        group_change_df["type"] = "group"
-        repeat_change_df = self.detectOrderedChanges(self._repeat_names, f.repeat_names)
-        repeat_change_df["type"] = "repeat"
+        unchanged_df = self.detectGroups(f, 'unchanged')
+        added_df = self.detectGroups(f, 'added')
+        removed_df = self.detectGroups(f, 'removed')
 
-        out = pd.concat([group_change_df, repeat_change_df], join = "inner")
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner")
+        out["group_id"] = out["current_group_id"].fillna(out["reference_group_id"])
+        out = out.sort_values(by=["group_id"], ascending=[True])
+
+        return out[["name", "status", "current_group_id", "reference_group_id", "current_parent", "reference_parent", "current_depth", "reference_depth", "current_order", "reference_order"]]
+
+    def detectGroups(self, f, status):
+
+        out = pd.merge(left = self._group_df,
+                       right = f.groups,
+                       on = "name",
+                       how = 'outer')
+
+        if status == 'unchanged':
+            condition = out["group_id_x"].notnull() & out["group_id_y"].notnull()
+        elif status == 'added':
+            condition = out["group_id_x"].notnull() & out["group_id_y"].isnull()
+        elif status == 'removed':
+            condition = out["group_id_x"].isnull() & out["group_id_y"].notnull()
+        else:
+            raise ValueError("Invalid status provided")
+
+        out = out[condition]
+
+        if out.empty:
+            return None
+
+        out = out.reset_index(drop=True)
+        out = out[["name", "group_id_x", "parent_x", "depth_x", "order_x", "group_id_y", "parent_y", "depth_y", "order_y"]] \
+            .rename(columns={
+                "group_id_x": "current_group_id",
+                "parent_x": "current_parent",
+                'depth_x': 'current_depth',
+                'order_x': 'current_order',
+                "group_id_y": "reference_group_id",
+                "parent_y": "reference_parent",
+                'depth_y': 'reference_depth',
+                'order_y': 'reference_order'
+            })
+
+        out["status"] = status
+        if status == 'unchanged':
+            out.loc[((~pd.isna(out["current_parent"])) & (out["current_parent"] != out["reference_parent"])) | (out["current_depth"] != out["reference_depth"]), "status"] = "modified"
 
         return out
 
@@ -556,7 +620,7 @@ class Form:
         out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
             .sort_values(by=["order"], ascending=[True])
         
-        return out[["name", "status", "label_dist", "current_label", "reference_label", "order"]]
+        return out[["group_name", "name", "status", "type", "label_mod", "current_label", "reference_label", "order"]]
 
     def detectUnchangedQuestions(self, f):
 
@@ -571,12 +635,13 @@ class Form:
         else:
             out = out.reset_index(drop = True)
             out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
-            out["label_dist"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), 2), axis = 1)
-            out["status"] = out.apply(lambda row: "unchanged" if row["label_dist"] == 0 else "modified", axis = 1)
-            out = out[["order", "name", "type_y", "label_x", "label_y", "status", "label_dist"]] \
+            out["label_mod"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), 2), axis = 1)
+            out["status"] = out.apply(lambda row: "unchanged" if row["label_mod"] == 0 else "modified", axis = 1)
+            out = out[["order", "name", "type_y", "label_x", "label_y", "status", "label_mod", "group_id_x"]] \
                     .rename(columns = {"type_y": "type",
                                        'label_x': 'current_label',
-                                       'label_y': 'reference_label'})
+                                       'label_y': 'reference_label',
+                                       'group_id_x': 'group_name'})
         
         return out
 
@@ -616,12 +681,13 @@ class Form:
         else:
             out = out.reset_index(drop = True)
             out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
-            out = out[["order", "name", "type_x", "label_x", "label_y", "group_id_x", "group_lbl_x"]] \
+            out = out[["order", "name", "type_x", "label_x", "label_y", "group_id_x"]] \
                     .rename(columns = {"type_x": "type",
                                        'label_x': 'current_label',
-                                       'label_y': 'reference_label'})
+                                       'label_y': 'reference_label',
+                                       'group_id_x': 'group_name'})
             out["status"] = "added"
-            out["label_dist"] = 0
+            out["label_mod"] = 0
             
         return out
     
@@ -646,13 +712,14 @@ class Form:
             #                        add_match_info = True)
             out = out.reset_index(drop = True)
             out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
-            out = out[["order", "name", "type_y", "label_x", "label_y"]] \
+            out = out[["order", "name", "type_y", "label_x", "label_y", "group_id_y"]] \
                         .rename(columns = {"index_y": "row",
-                                        "type_y": "type",
-                                        'label_x': 'current_label',
-                                        'label_y': 'reference_label'}) 
+                                           "type_y": "type",
+                                           'label_x': 'current_label',
+                                           'label_y': 'reference_label',
+                                           'group_id_y': 'group_name'}) 
             out["status"] = "removed"
-            out["label_dist"] = 0
+            out["label_mod"] = 0
             """ 
             print (out)
             out = out[["row",
