@@ -121,27 +121,35 @@ class FormComparator:
             # Define formatting styles
             workbook = writer.book
             green_format = workbook.add_format({
+                'text_wrap': True,
+                'valign': 'top',
                 "bg_color": "#C6EFCE",
-                "font_color": "#006100"})  # Green
+                "font_color": "#006100"}) 
             red_format = workbook.add_format({
+                'text_wrap': True,
+                'valign': 'top',
                 "bg_color": "#FFC7CE",
-                "font_color": "#9C0006"})  # Red
+                "font_color": "#9C0006"})
             orange_format = workbook.add_format({
+                'text_wrap': True,
+                'valign': 'top',
                 "bg_color": "#FFEB9C",
-                "font_color": "#9C5700"})  # Orange
+                "font_color": "#9C5700"})
             hyperlink_format = workbook.add_format({
                 "font_color": "blue",
-                "underline": 1
-            })
+                "underline": 1})
+            wrap_format = workbook.add_format({
+                'text_wrap': True,
+                'valign': 'top'})
 
             for csn, df in sds:
                 df.to_excel(writer, sheet_name = csn, index=False)
                 worksheet = writer.sheets[csn]
                 for idx, col in enumerate(df.columns):
                     # Find the maximum length of the column's content (including the header)
-                    max_length = max(df[col].astype(str).map(len).max(), len(col))
+                    max_length = min(max(df[col].astype(str).map(len).max(), len(col)), 50)
                     # Set the column width to the max length, adding a little padding
-                    worksheet.set_column(idx, idx, max_length + 2)
+                    worksheet.set_column(idx, idx, max_length + 2, wrap_format)
 
             # Apply color formatting
             for sheet_name, df, j in sds_color:
