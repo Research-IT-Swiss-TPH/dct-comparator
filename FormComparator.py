@@ -21,7 +21,7 @@ class FormComparator:
         cur_form = form.Form(cur_xlsx)
         ref_form = form.Form(ref_xlsx)
 
-        output_xlsx="comparison_results.xlsx"
+        output_xlsx = "{}#{}!{}#{}.xlsx".format(cur_form.id, cur_form.version, ref_form.id, ref_form.version)
 
         if output_dir != ".":
             os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
@@ -50,24 +50,24 @@ class FormComparator:
                 '=HYPERLINK("#\'⚙️ settings\'!A1", "⚙️ Settings")'],
              "Unchanged" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "unchanged"]),
-                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged")]),
-                "",#len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged") & (self._group_repeat_names_df["type"] == "repeat")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged") & (self._group_repeat_names_df["current_type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "unchanged") & (self._group_repeat_names_df["current_type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "unchanged"]),
                 len(self._list_name_df[self._list_name_df["status"] == "unchanged"]),
                 len(self._choices_df[self._choices_df["status"] == "unchanged"]),
                 len(self._settings_df[self._settings_df["status"] == "unchanged"])],
             "Added" : [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "added"]),
-                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added")]),
-                "",#len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added") & (self._group_repeat_names_df["type"] == "repeat")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added") & (self._group_repeat_names_df["current_type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "added") & (self._group_repeat_names_df["current_type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "added"]),
                 len(self._list_name_df[self._list_name_df["status"] == "added"]),
                 len(self._choices_df[self._choices_df["status"].str.contains("added", na = False)]),
                 len(self._settings_df[self._settings_df["status"] == "added"])],
             "Deleted": [
                 len(self._survey_columns_df[self._survey_columns_df["status"] == "removed"]),
-                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed")]),
-                "",#len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed") & (self._group_repeat_names_df["type"] == "repeat")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed") & (self._group_repeat_names_df["current_type"] == "group")]),
+                len(self._group_repeat_names_df[(self._group_repeat_names_df["status"] == "removed") & (self._group_repeat_names_df["current_type"] == "repeat")]),
                 len(self._survey_questions_df[self._survey_questions_df["status"] == "removed"]),
                 len(self._list_name_df[self._list_name_df["status"] == "removed"]),
                 len(self._choices_df[self._choices_df["status"].str.contains("removed", na = False)]),
