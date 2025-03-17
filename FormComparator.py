@@ -156,6 +156,7 @@ class FormComparator:
                     max_length = min(max(df[col].astype(str).map(len).max(), len(col)), 50)
                     # Set the column width to the max length, adding a little padding
                     worksheet.set_column(idx, idx, max_length + 2, wrap_format)
+                    worksheet.freeze_panes(1, 0)
 
             # Apply color formatting
             for sheet_name, df, j in sds_color:
