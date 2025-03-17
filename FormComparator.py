@@ -7,28 +7,51 @@ class FormComparator:
     def __init__(self, cur_xlsx, ref_xlsx, output_dir = "."):
 
         """
-        Initializes the XLSComparator with a name and an optional XLSX filename.
+        Initializes the XLSComparator class for comparing two XLSX forms.
 
-        This method sets up the necessary variables for performing the comparison
-        between the current form and the reference form, and specifies the output 
-        directory and output XLSX filename for storing the results.
+        This constructor sets up the environment for comparing a current XLSX form against a reference form. 
+        It handles the initialization of form objects, constructs the output filename based on form IDs and 
+        versions, and ensures the specified output directory exists.
 
-        :param cur_form: The current form to be compared (can be a DataFrame, file, etc.).
-        :param ref_form: The reference form to compare against (can be a DataFrame, file, etc.).
-        :param output_dir: Directory where the comparison results will be saved. Defaults to the current directory ("./").
+        :param cur_xlsx: 
+            Path to the current XLSX form to be compared.
+        :type cur_xlsx: str
+
+        :param ref_xlsx: 
+            Path to the reference XLSX form to compare against.
+        :type ref_xlsx: str
+
+        :param output_dir: 
+            The directory where the comparison results will be saved. 
+            By default, the results are saved in the current directory ("./").
+        :type output_dir: str, optional
+
+        :raises FileNotFoundError: 
+            If the specified XLSX files are not found.
+
+        :example:
+            >>> comparator = XLSComparator("current.xlsx", "reference.xlsx", output_dir="results/")
+            📝 Compare forms and store results in results/current#1.0!reference#2.0.xlsx
+
+        The output filename format is: 
+            `<current_form_id>#<current_form_version>!<ref_form_id>#<ref_form_version>.xlsx`
         """
 
+        # Initialize form objects
         cur_form = form.Form(cur_xlsx)
         ref_form = form.Form(ref_xlsx)
 
+        # Construct output filename based on form IDs and versions
         output_xlsx = "{}#{}!{}#{}.xlsx".format(cur_form.id, cur_form.version, ref_form.id, ref_form.version)
 
+        # Handle output directory creation
         if output_dir != ".":
-            os.makedirs(output_dir, exist_ok=True)  # Ensure the directory exists
+            os.makedirs(output_dir, exist_ok=True)  # Create directory if it doesn't exist
             self._output_path = os.path.join(output_dir, output_xlsx)
         else:
             self._output_path = output_xlsx
 
+        # Notify the user about the output path
         print ("📝 Compare forms and store results in " + self._output_path)
 
         self._settings_df                                          = cur_form.compareSettings(ref_form)
@@ -116,7 +139,6 @@ class FormComparator:
         ]
 
         # Write output file
-
         with pd.ExcelWriter(self._output_path, engine="xlsxwriter") as writer:
 
             # Define formatting styles
