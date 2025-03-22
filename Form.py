@@ -197,7 +197,7 @@ class Form:
         self._notes = questions[questions["type"] == "note"]
         # Define mandatory and optional columns
         mandatory_columns = ["index", "group_id", "type", "name", self._label]
-        self._optional_columns = ["relevant", "calculation","required", "choice_filter"]
+        self._optional_columns = ["relevant", "calculation","required", "choice_filter", "constraint"]
 
         # Combine for desired columns list
         desired_columns = mandatory_columns + self._optional_columns
@@ -629,16 +629,29 @@ class Form:
         added_df = self.detectAddedQuestions(f)
         removed_df = self.detectDeletedQuestions(f)
 
-        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "outer") \
             .sort_values(by=["order"], ascending=[True])
         
-        return out[[
-            "group_name", "name", "status", "type",
-            "label_mod", "logic_mod", "calc_mod",
-            "current_label", "reference_label",
-            "current_relevant", "reference_relevant",
-            "current_calculation", "reference_calculation",
-            "order"]]
+        # Always-required base columns
+        base_columns = ["group_name", "name", "status", "type", "order"]
+
+        # Dynamically gather optional columns from unchanged_df (if it exists)
+        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod",
+                            "current_label", "reference_label",
+                            "current_relevant", "reference_relevant",
+                            "current_calculation", "reference_calculation",
+                            "current_required", "reference_required",
+                            "current_filter", "reference_filter"]
+
+        # Extract columns that exist in the DataFrame
+        detected_columns = [col for col in optional_prefixes if col in out.columns]
+
+        final_columns = base_columns + detected_columns
+
+        # Filter out any missing columns to avoid KeyErrors
+        final_columns = [col for col in final_columns if col in out.columns]
+
+        return out[final_columns]
 
     def detectUnchangedQuestions(self, f):
 
@@ -689,7 +702,7 @@ class Form:
             "order", "name", "type_y", "label_x", "label_y", "group_id_x",
             "relevant_x", "relevant_y", "calculation_x", "calculation_y",
             "required_x", "required_y", "choice_filter_x", "choice_filter_y",
-            "status", "label_mod", "logic_mod", "calc_mod"
+            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod"
         ]
         # Filter to only columns that actually exist
         final_columns = [col for col in final_columns if col in out.columns]
