@@ -183,7 +183,7 @@ class Form:
             else:
                 # For all questions, assign the current group_id
                 row1 = row.copy()
-                row1["group_id"] = next(iter(stack[-1].keys())) if stack else None  # Current group in stack
+                row1["group_id"] = next(iter(stack[-1].keys())).split("____", 1)[1] if stack else None  # Current group in stack
                 # Append the question with the group info
                 questions_with_group_info.append(row1.to_dict())
 
@@ -636,12 +636,13 @@ class Form:
         base_columns = ["group_name", "name", "status", "type", "order"]
 
         # Dynamically gather optional columns from unchanged_df (if it exists)
-        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod",
+        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod",
                             "current_label", "reference_label",
                             "current_relevant", "reference_relevant",
                             "current_calculation", "reference_calculation",
                             "current_required", "reference_required",
-                            "current_filter", "reference_filter"]
+                            "current_filter", "reference_filter",
+                            "reference_group_name"]
 
         # Extract columns that exist in the DataFrame
         detected_columns = [col for col in optional_prefixes if col in out.columns]
@@ -697,12 +698,14 @@ class Form:
             lambda row: "unchanged" if all(val == 0 for val in row) else "modified",
             axis=1
         )
+        for new_col, (col_x, col_y) in {"group_mod": ("group_id_x", "group_id_y")}.items():
+            out[new_col] = out.apply(lambda row: check_modification(row[col_x], row[col_y]), axis=1)
         # Select and rename final output columns
         final_columns = [
-            "order", "name", "type_y", "label_x", "label_y", "group_id_x",
+            "order", "name", "type_y", "label_x", "label_y", "group_id_x", "group_id_y",
             "relevant_x", "relevant_y", "calculation_x", "calculation_y",
             "required_x", "required_y", "choice_filter_x", "choice_filter_y",
-            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod"
+            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod"
         ]
         # Filter to only columns that actually exist
         final_columns = [col for col in final_columns if col in out.columns]
@@ -719,7 +722,8 @@ class Form:
             "required_y": "reference_required",
             "choice_filter_x": "current_filter",
             "choice_filter_y": "reference_filter",
-            "group_id_x": "group_name"
+            "group_id_x": "group_name",
+            "group_id_y": "reference_group_name"
         }
         # Filter to only columns that actually exist
         column_renames = {old: new for old, new in column_renames.items() if old in out.columns}
