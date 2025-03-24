@@ -183,7 +183,7 @@ class Form:
             else:
                 # For all questions, assign the current group_id
                 row1 = row.copy()
-                row1["group_id"] = next(iter(stack[-1].keys())) if stack else None  # Current group in stack
+                row1["group_id"] = next(iter(stack[-1].keys())).split("____", 1)[1] if stack else None  # Current group in stack
                 # Append the question with the group info
                 questions_with_group_info.append(row1.to_dict())
 
@@ -195,10 +195,21 @@ class Form:
         questions = pd.DataFrame(questions_with_group_info)
 
         self._notes = questions[questions["type"] == "note"]
-        questions = questions[[
-            "index", "group_id",
-            "type", "name", self._label, 
-            "relevant", "calculation"]]
+        # Define mandatory and optional columns
+        mandatory_columns = ["index", "group_id", "type", "name", self._label]
+        self._optional_columns = ["relevant", "calculation","required", "choice_filter", "constraint"]
+
+        # Combine for desired columns list
+        desired_columns = mandatory_columns + self._optional_columns
+
+        # Check for missing mandatory columns
+        missing = [col for col in mandatory_columns if col not in questions.columns]
+        if missing:
+            raise ValueError(f"Missing mandatory column(s): {missing}")
+
+        # Keep only existing columns (still keeping optional ones only if they exist)
+        existing_columns = [col for col in desired_columns if col in questions.columns]
+        questions = questions[existing_columns]
         #questions[self._label] = questions.apply(lambda row: process_label(row[self._label]), axis = 1)
 
         self._questions = questions.reset_index(drop=True)
@@ -618,16 +629,30 @@ class Form:
         added_df = self.detectAddedQuestions(f)
         removed_df = self.detectDeletedQuestions(f)
 
-        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "outer") \
             .sort_values(by=["order"], ascending=[True])
         
-        return out[[
-            "group_name", "name", "status", "type",
-            "label_mod", "logic_mod", "calc_mod",
-            "current_label", "reference_label",
-            "current_relevant", "reference_relevant",
-            "current_calculation", "reference_calculation",
-            "order"]]
+        # Always-required base columns
+        base_columns = ["group_name", "name", "status", "type", "order"]
+
+        # Dynamically gather optional columns from unchanged_df (if it exists)
+        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod",
+                            "current_label", "reference_label",
+                            "current_relevant", "reference_relevant",
+                            "current_calculation", "reference_calculation",
+                            "current_required", "reference_required",
+                            "current_filter", "reference_filter",
+                            "reference_group_name"]
+
+        # Extract columns that exist in the DataFrame
+        detected_columns = [col for col in optional_prefixes if col in out.columns]
+
+        final_columns = base_columns + detected_columns
+
+        # Filter out any missing columns to avoid KeyErrors
+        final_columns = [col for col in final_columns if col in out.columns]
+
+        return out[final_columns]
 
     def detectUnchangedQuestions(self, f):
 
@@ -651,26 +676,59 @@ class Form:
         out = out.reset_index(drop = True)
         out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
         out["label_mod"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), 2), axis = 1)
-        # Relevant and calculation modification check
-        out["logic_mod"] = out.apply(lambda row: check_modification(row["relevant_x"], row["relevant_y"]), axis=1)
-        out["calc_mod"] = out.apply(lambda row: check_modification(row["calculation_x"], row["calculation_y"]), axis=1)
+        mod_columns = {
+            "logic_mod": ("relevant_x", "relevant_y"),
+            "calc_mod": ("calculation_x", "calculation_y"),
+            "required_mod": ("required_x", "required_y"),
+            "filter_mod": ("choice_filter_x", "choice_filter_y")
+        }
+        mod_columns = {
+            new_col: (col_x, col_y)
+            for new_col, (col_x, col_y) in mod_columns.items()
+            if col_x in out.columns and col_y in out.columns
+        }
+        # Apply the check_modification function to each pair
+        for new_col, (col_x, col_y) in mod_columns.items():
+            out[new_col] = out.apply(lambda row: check_modification(row[col_x], row[col_y]), axis=1)
 
-        out["status"] = out.apply(lambda row: "unchanged" if (row["label_mod"] == 0 and row["logic_mod"] == 0 and row["calc_mod"] == 0) else "modified", axis = 1)
-        out = out[[
-            "order", "name", "type_y", "label_x", "label_y", "group_id_x",
-            "relevant_x", "relevant_y", "calculation_x", "calculation_y", 
-            "status", "label_mod", "logic_mod", "calc_mod"
-        ]].rename(columns={
+        # Identify all columns that end with '_mod'
+        mod_check_cols = [col for col in out.columns if col.endswith('_mod')]
+        # Set status based on whether all mod columns are zero
+        out["status"] = out[mod_check_cols].apply(
+            lambda row: "unchanged" if all(val == 0 for val in row) else "modified",
+            axis=1
+        )
+        for new_col, (col_x, col_y) in {"group_mod": ("group_id_x", "group_id_y")}.items():
+            out[new_col] = out.apply(lambda row: check_modification(row[col_x], row[col_y]), axis=1)
+        # Select and rename final output columns
+        final_columns = [
+            "order", "name", "type_y", "label_x", "label_y", "group_id_x", "group_id_y",
+            "relevant_x", "relevant_y", "calculation_x", "calculation_y",
+            "required_x", "required_y", "choice_filter_x", "choice_filter_y",
+            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod"
+        ]
+        # Filter to only columns that actually exist
+        final_columns = [col for col in final_columns if col in out.columns]
+        # Column selection and renaming map
+        column_renames = {
             "type_y": "type",
-            'label_x': 'current_label',
-            'label_y': 'reference_label',
+            "label_x": "current_label",
+            "label_y": "reference_label",
             "relevant_x": "current_relevant",
             "relevant_y": "reference_relevant",
             "calculation_x": "current_calculation",
             "calculation_y": "reference_calculation",
-            'group_id_x': 'group_name'})
+            "required_x": "current_required",
+            "required_y": "reference_required",
+            "choice_filter_x": "current_filter",
+            "choice_filter_y": "reference_filter",
+            "group_id_x": "group_name",
+            "group_id_y": "reference_group_name"
+        }
+        # Filter to only columns that actually exist
+        column_renames = {old: new for old, new in column_renames.items() if old in out.columns}
         
-        return out
+        return out[final_columns].rename(columns = column_renames)
 
     def detectAddedQuestions(self, f):
 
