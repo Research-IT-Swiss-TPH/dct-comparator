@@ -108,6 +108,8 @@ class Form:
             print("\t - ⚠️ Sheet 'survey' not found in the file")
         try:
             choices_df  = pd.read_excel(in_xlsx, sheet_name="choices")
+            if "list name" in choices_df.columns and "list_name" not in choices_df.columns:
+                choices_df = choices_df.rename(columns={"list name": "list_name"})
             self._choices_df = choices_df[choices_df["list_name"].notnull()]
             dims = self._choices_df.shape 
             print("\t - ℹ️ choices sheet with " + str(dims[1]) + " columns and " + str(dims[0]) + " rows")
