@@ -77,7 +77,7 @@ Example code snippet
 
 ```{python}
 import os
-from your_module import comp  # replace 'your_module' with the actual module/package name
+import FormComparator as comp
 
 # Set the root path where your XLSForm files are stored
 root = "data"  # or any path to your XLSForms
