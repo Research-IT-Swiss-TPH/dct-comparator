@@ -122,3 +122,9 @@ If you want to contribute, follow these steps:
 ## Licensing
 
 The project is open-sourced, with all code shared on GitHub under an MIT license to promote accessibility and collaboration.
+
+## Changelog
+
+Version | Description
+------- | --------------------
+v0.9.0  | Pre-release
