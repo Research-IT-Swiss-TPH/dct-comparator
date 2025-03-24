@@ -1,4 +1,4 @@
-# Data collection tool comparator
+# Data Collection Tool (DCT) comparator
 
 ## Overview
 
