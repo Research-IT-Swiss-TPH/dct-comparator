@@ -34,6 +34,32 @@ A file `requirements.txt` is also available.
 
 ## Installation
 
+To set up the environment and install all required dependencies, follow these steps:
+
+Clone the repository in your local :
+
+```{bash}
+git clone <repository_url>
+cd <repository_folder>
+```
+
+Create a virtual environment (recommended):
+
+```{bash}
+python3 -m venv venv
+source venv/bin/activate
+```
+
+On Windows: venv\Scripts\activate
+
+Install dependencies using the requirements.txt file:
+
+```{bash}
+pip install -r requirements.txt
+```
+
+After installation, you should be ready to run the code.
+
 ## Screenshots
 
 ![image](https://github.com/user-attachments/assets/6d76c627-229d-470a-a7d2-360a6c2f3365)
