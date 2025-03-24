@@ -39,7 +39,7 @@ To set up the environment and install all required dependencies, follow these st
 Clone the repository in your local :
 
 ```{bash}
-git clone <repository_url>
+git clone https://github.com/Research-IT-Swiss-TPH/odk_xlsform_management
 cd <repository_folder>
 ```
 
@@ -59,6 +59,41 @@ pip install -r requirements.txt
 ```
 
 After installation, you should be ready to run the code.
+
+## Usage
+
+After installing the dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. Below is an example of how to use the tool to compare two XLSForm files:
+
+1. Prepare your XLSForm files
+Ensure you have two XLSForm Excel files to compare:
+
+A reference form (e.g., WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx)
+
+A current form (e.g., WHOVA2022_XLS_form_for_ODK.xlsx)
+
+Place them in a known directory (e.g., a data/ folder).
+
+Example code snippet
+
+```{python}
+import os
+from your_module import comp  # replace 'your_module' with the actual module/package name
+
+# Set the root path where your XLSForm files are stored
+root = "data"  # or any path to your XLSForms
+
+# Define file paths
+f2016_xlsx = os.path.join(root, "WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx")
+f2022_xlsx = os.path.join(root, "WHOVA2022_XLS_form_for_ODK.xlsx")
+
+# Run the comparison
+comparison = comp.FormComparator(
+    cur_xlsx=f2022_xlsx,
+    ref_xlsx=f2016_xlsx,
+    output_dir="outputs"  # directory where results will be saved
+)
+```
+The tool will generate output files (e.g., reports or comparison results) in the specified output_dir.
 
 ## Screenshots
 
