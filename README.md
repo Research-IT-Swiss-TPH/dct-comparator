@@ -60,16 +60,16 @@ After installation, you should be ready to run the code.
 
 ## Usage
 
-After installing the dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. Below is an example of how to use the tool to compare two XLSForm files:
+After installing the dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. 
 
-1. Prepare your XLSForm files
-Ensure you have two XLSForm Excel files to compare:
+### Compare XLSForms
 
-A reference form (e.g., WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx)
+Below is an example of how to use the tool to compare two XLSForm files:
 
-A current form (e.g., WHOVA2022_XLS_form_for_ODK.xlsx)
+Prepare your XLSForm files and place them in a known directory (e.g., a data/ folder).
 
-Place them in a known directory (e.g., a data/ folder).
+* A reference form (e.g., WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx)
+* A current form (e.g., WHOVA2022_XLS_form_for_ODK.xlsx)
 
 Example code snippet
 
@@ -92,6 +92,14 @@ comparison = comp.FormComparator(
 )
 ```
 The tool will generate output files (e.g., reports or comparison results) in the specified output_dir.
+
+### Extract and manipulate XLSForm information
+
+```python
+import Form as form
+f = form.Form(f2016_xlsx)
+f.groups
+```
 
 ## Screenshots
 
