@@ -2,9 +2,9 @@
 
 ## Overview
 
-**DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm data collection tools. This project addresses the need for effectively managing and tracking changes in XLSForm-based data collection tools, such as the WHO verbal autopsy, which is implemented in XX countries. Data collection tools often require regular updates to a master version and localized adaptations to meet specific regional or local needs. However, tracking changes across different master and child versions is a complex and time-consuming process. To simplify this, the project aims to develop a Python tool that streamlines the functional comparison of XLSForms.
+Data collection tools often require regular updates to a master version as well as sometimes additionally localized adaptations to meet specific regional or local needs. However, tracking changes across different master (and child) versions is a complex and time-consuming process. To simplify this, **DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm data collection tools, such as the WHO verbal autopsy, which is implemented in many countries.
 
-The solution includes the development of a Python class designed to represents an XLSForm and provides class methods for 1-to-1 or 1-to-N comparisons of ODK forms from a functional perspective. A step-by-step workflow will be created to demonstrate how to use the class for comparing two forms or a master form with multiple child forms. The workflow will generate an Excel file with multiple tabs, providing a detailed comparison of XLSForms. It will highlight functional differences across various components using color scales, with the possibility of including additional comparisons as needed. 
+The solution includes the development of a Python class designed to represents an XLSForm and provides class methods for 1-to-1 comparisons of ODK forms from a functional perspective. A step-by-step Jupyter Notebook is also available to demonstrate how to use the class for comparing two forms. The workflow generates an Excel file with multiple tabs, providing a detailed comparison of XLSForms with functional differences across various components using color scales. 
 
 ## Form class features
 
