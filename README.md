@@ -38,14 +38,14 @@ To set up the environment and install all required dependencies, follow these st
 
 Clone the repository in your local :
 
-```{bash}
+```bash
 git clone https://github.com/Research-IT-Swiss-TPH/odk_xlsform_management
 cd <repository_folder>
 ```
 
 Create a virtual environment (recommended):
 
-```{bash}
+```bash
 python3 -m venv venv
 source venv/bin/activate
 ```
@@ -54,7 +54,7 @@ On Windows: venv\Scripts\activate
 
 Install dependencies using the requirements.txt file:
 
-```{bash}
+```bash
 pip install -r requirements.txt
 ```
 
@@ -75,7 +75,7 @@ Place them in a known directory (e.g., a data/ folder).
 
 Example code snippet
 
-```{python}
+```python
 import os
 import FormComparator as comp
 
