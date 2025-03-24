@@ -38,23 +38,23 @@ A file `requirements.txt` is also available.
 
 To set up the environment and install all required dependencies, follow these steps:
 
-Clone the repository in your local :
-
-[How to clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+1. Clone the repository in a local copy on your computer:
 
 ```bash
 git clone https://github.com/Research-IT-Swiss-TPH/odk_xlsform_management
 cd <repository_folder>
 ```
 
-Create a virtual environment (recommended), for instance with Conda:
+[How to clone using the webbrowser](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+
+2. Create a virtual environment (recommended), for instance with Conda:
 
 ```bash
 conda create -n formcompareenv python=3.13.2
 conda activate formcompareenv
 ```
 
-Install dependencies using the requirements.txt file:
+3. Install dependencies using the requirements.txt file:
 
 ```bash
 pip install -r requirements.txt
