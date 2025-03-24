@@ -43,14 +43,12 @@ git clone https://github.com/Research-IT-Swiss-TPH/odk_xlsform_management
 cd <repository_folder>
 ```
 
-Create a virtual environment (recommended):
+Create a virtual environment (recommended), for instance with Conda:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+conda create -n formcompareenv python=3.13.2
+conda activate formcompareenv
 ```
-
-On Windows: venv\Scripts\activate
 
 Install dependencies using the requirements.txt file:
 
