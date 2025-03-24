@@ -40,6 +40,8 @@ To set up the environment and install all required dependencies, follow these st
 
 Clone the repository in your local :
 
+[How to clone](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
+
 ```bash
 git clone https://github.com/Research-IT-Swiss-TPH/odk_xlsform_management
 cd <repository_folder>
