@@ -12,7 +12,7 @@ The Form class represents an XLSForm object and provides various methods to inte
 
 Key features of the Form class include:
 
-* **Initialization**: initialize a Form object by providing the path to the XLSForm spreadsheet file and a survey type (e.g., "SPA exit interview", "WHO verbal autopsy").
+* **Initialization**: initialize a Form object by providing the path to the XLSForm spreadsheet file.
 * **Retrieve form general information**: access form-related information such as the form's unique identifier, title, version, default language, and survey type.
 * **Retrieve questions**: obtain a dataframe containing the survey questions, including attributes like question type, label, and group information.
 
