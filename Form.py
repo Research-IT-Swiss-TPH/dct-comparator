@@ -531,20 +531,16 @@ class Form:
 
         return self.summariseChanges(self._list_names, f.list_names)
 
-    def compareChoicesColumns(self, f):
-
-        return self.summariseChanges(self._choices_columns, f.choices_columns)
-
     def compareChoices(self, f):
 
         unchanged_df = self.detectUnchangedChoices(f)
         added_df = self.detectAddedChoices(f)
         removed_df = self.detectDeletedChoices(f)
 
-        out = pd.concat([unchanged_df, added_df, removed_df], join = "inner") \
+        out = pd.concat([unchanged_df, added_df, removed_df], join = "outer") \
             .sort_values(by=["list_name", "name"], ascending=[True, True], key = lambda x: x.str.lower())
 
-        return out[["list_name", "name", "status", "current_label", "reference_label"]]
+        return out#[["list_name", "name", "status", "current_label", "reference_label"]]
 
     def detectUnchangedChoices(self, f):
 
@@ -555,17 +551,21 @@ class Form:
         out = out[out["label_x"].notnull() & out["label_y"].notnull()]
 
         if (out.shape[0] == 0):
-            out = None
-        else:
-            out = out.reset_index(drop = True)
+            return None
 
-            out["status"] = out.apply(lambda row: "unchanged" if Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]) == 0 else "modified_label", axis = 1)
-            
-            out = out[["list_name", "name", "label_x", "label_y", "status"]] \
-                .rename(columns={
-                    'label_x': 'current_label',
-                    'label_y': 'reference_label'
-                    })
+        out = out.reset_index(drop = True)
+
+        mandatory_cols = ["list_name", "name", "status", "label_x", "label_y"]
+        # Identify other columns
+        other_cols = [col for col in out.columns if not(col in ["list_name", "name", "label_x", "label_y"])]
+
+        out["status"] = out.apply(lambda row: "unchanged" if Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]) == 0 else "modified_label", axis = 1)
+
+        out = out[mandatory_cols + other_cols] \
+            .rename(columns={
+                'label_x': 'current_label',
+                'label_y': 'reference_label'
+                })
         
         return out
 
@@ -582,19 +582,19 @@ class Form:
         out = out[out["label_x"].notnull() & out["label_y"].isnull()]
 
         if (out.shape[0] == 0):
-            out = None
-        else:
-            out = out.reset_index(drop = True)
+            return None
 
-            # Different flag if the list_name has actually been added
-            out = out[["list_name", "name", "label_x", "label_y"]] \
-                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
-                .rename(columns={
-                    'label_x': 'current_label',
-                    'label_y': 'reference_label'
-                    })
+        out = out.reset_index(drop = True)
+
+        # Different flag if the list_name has actually been added
+        out = out[["list_name", "name", "label_x", "label_y"]] \
+            .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+            .rename(columns={
+                'label_x': 'current_label',
+                'label_y': 'reference_label'
+                })
         
-        return out
+        return out[["list_name", "name", "status", "current_label", "reference_label"]]
 
     def detectDeletedChoices(self, f):
 
@@ -609,19 +609,19 @@ class Form:
         out = out[out["label_x"].isnull() & out["label_y"].notnull()]
         
         if (out.shape[0] == 0):
-            out = None
-        else:
-            out = out.reset_index(drop = True)
+            return None
 
-            # Different flag if the list_name has actually been removed
-            out = out[["list_name", "name", "label_x", "label_y"]] \
-                .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
-                .rename(columns={
-                    'label_x': 'current_label',
-                    'label_y': 'reference_label'
-                    })
+        out = out.reset_index(drop = True)
 
-        return out
+        # Different flag if the list_name has actually been removed
+        out = out[["list_name", "name", "label_x", "label_y"]] \
+            .merge(list_name_df[['list_name', 'status']], on='list_name', how='left') \
+            .rename(columns={
+                'label_x': 'current_label',
+                'label_y': 'reference_label'
+                })
+
+        return out[["list_name", "name", "status", "current_label", "reference_label"]]
 
     # Questions
 
@@ -700,6 +700,7 @@ class Form:
             lambda row: "unchanged" if all(val == 0 for val in row) else "modified",
             axis=1
         )
+        # Add group_mod outside of other "_mod" columns as otehrwise too many columns flagged as modified
         for new_col, (col_x, col_y) in {"group_mod": ("group_id_x", "group_id_y")}.items():
             out[new_col] = out.apply(lambda row: check_modification(row[col_x], row[col_y]), axis=1)
         # Select and rename final output columns
@@ -941,7 +942,3 @@ class Form:
             out = None
 
         return out
-    
-    """Please note that the compare, compareVersion, and compareID methods are designed to provide comparison functionality but should be used with care, as they rely on the assumption that certain attributes of the form are set correctly during initialization."""
-
-"""Note: This documentation assumes that the class is used as provided and that any missing implementations or additional functionality required for specific use cases are handled outside of the class definition."""
