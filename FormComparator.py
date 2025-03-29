@@ -195,8 +195,8 @@ class FormComparator:
                 if cell_value.startswith('=HYPERLINK('):
                     writer.sheets["👁️ overview"].write_formula(row, 0, cell_value, hyperlink_format)
 
-    def getOutputRelativePath(self):
-
+    @property
+    def output_path(self):
         return self._output_path
 
 def apply_color_format(worksheet, df, green_format, red_format, orange_format, j = 1):
