@@ -54,12 +54,13 @@ class FormComparator:
         # Notify the user about the output path
         print ("📝 Compare forms and store results in " + self._output_path)
 
-        self._settings_df                                          = cur_form.compareSettings(ref_form)
-        self._survey_columns_df                                    = cur_form.compareSurveyColumns(ref_form)
-        self._group_repeat_names_df                                = cur_form.compareGroupRepeatNames(ref_form)
-        self._list_name_df                                         = cur_form.compareListNames(ref_form)
-        self._choices_df                                           = cur_form.compareChoices(ref_form)
-        self._survey_questions_df                                  = cur_form.compareQuestions(ref_form)
+        self._settings_df                             = cur_form.compareSettings(ref_form)
+        self._survey_columns_df                       = cur_form.compareColumns(ref_form, "survey")
+        self._group_repeat_names_df                   = cur_form.compareGroupRepeatNames(ref_form)
+        self._list_name_df                            = cur_form.compareListNames(ref_form)
+        self._choices_df                              = cur_form.compareChoices(ref_form)
+        self._choices_columns_df                      = cur_form.compareColumns(ref_form, "choices")
+        self._survey_questions_df                     = cur_form.compareQuestions(ref_form)
 
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
@@ -110,18 +111,20 @@ class FormComparator:
         # List of sheets and corresponding DataFrame
         sds = [
             ("👁️ overview", self._generic_df),
-            ("📋 survey_questions", self._survey_questions_df),
-            ("📋 survey_columns", self._survey_columns_df),
-            ("📋 survey_groups_repeats", self._group_repeat_names_df),
+            ("📋 survey questions", self._survey_questions_df),
+            ("📋 survey columns", self._survey_columns_df),
+            ("📋 survey groups repeats", self._group_repeat_names_df),
             ("🔘 choices", self._choices_df),
+            ("📋 choices columns", self._choices_columns_df),
             ("⚙️ settings", self._settings_df)
         ]
 
         sds_color = [
-            ("📋 survey_columns", self._survey_columns_df, 1),
-            ("📋 survey_groups_repeats", self._group_repeat_names_df, 1),
+            ("📋 survey columns", self._survey_columns_df, 1),
+            ("📋 choices columns", self._choices_columns_df, 1),
+            ("📋 survey groups repeats", self._group_repeat_names_df, 1),
             ("🔘 choices", self._choices_df, 2),
-            ("📋 survey_questions", self._survey_questions_df, 2),
+            ("📋 survey questions", self._survey_questions_df, 2),
             ("⚙️ settings", self._settings_df, 1)
         ]
 
@@ -131,10 +134,11 @@ class FormComparator:
         settings_color = "#F5B041"
         slbls_color = [
             ("👁️ overview", overview_color),
-            ("📋 survey_columns", survey_color),
-            ("📋 survey_groups_repeats", survey_color),
+            ("📋 survey questions", survey_color),
+            ("📋 survey columns", survey_color),
+            ("📋 survey groups repeats", survey_color),
             ("🔘 choices", choices_color),
-            ("📋 survey_questions", survey_color),
+            ("📋 choices columns", choices_color),
             ("⚙️ settings", settings_color)
         ]
 
@@ -195,8 +199,8 @@ class FormComparator:
                 if cell_value.startswith('=HYPERLINK('):
                     writer.sheets["👁️ overview"].write_formula(row, 0, cell_value, hyperlink_format)
 
-    def getOutputRelativePath(self):
-
+    @property
+    def output_path(self):
         return self._output_path
 
 def apply_color_format(worksheet, df, green_format, red_format, orange_format, j = 1):
