@@ -66,6 +66,24 @@ After installation, you should be ready to run the code.
 
 After installing the dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. 
 
+### Extract and manipulate XLSForm information
+
+Below is an example of how to use the tool to extract information from XLSForms
+
+```python
+import os
+import Form as form
+
+# Set the root path where your XLSForm files are stored
+root = "data"  # or any path to your XLSForms
+
+# Define file paths
+f2016_xlsx = os.path.join(root, "WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx")
+
+f = form.Form(f2016_xlsx)
+f.groups
+```
+
 ### Compare XLSForms
 
 Below is an example of how to use the tool to compare two XLSForm files:
@@ -97,13 +115,7 @@ comparison = comp.FormComparator(
 ```
 The tool will generate output files (e.g., reports or comparison results) in the specified output_dir.
 
-### Extract and manipulate XLSForm information
-
-```python
-import Form as form
-f = form.Form(f2016_xlsx)
-f.groups
-```
+⚠️ Changes from lowercase to uppercase in labels are not considered as changes.
 
 ## Screenshots
 
@@ -131,4 +143,4 @@ The project is open-sourced, with all code shared on GitHub under an MIT license
 
 Version | Description
 ------- | --------------------
-v0.9.0  | Pre-release
+v1.0.0  | First release
