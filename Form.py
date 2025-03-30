@@ -420,29 +420,33 @@ class Form:
             edit_distance = 1.0
         return edit_distance
 
-    # Survey columns
+    # Compare columns
 
-    def compareSurveyColumns(self, f):
+    def compareColumns(self, f, sheet):
 
-        """Compare survey columns with custom logic for modified items."""
-        unchanged, added, removed = Form.detectChanges(self._survey_columns, f.survey_columns)
+        """Compare columns with custom logic for modified items."""
+
+        if sheet == "survey":
+            unchanged, added, removed = Form.detectChanges(self._survey_columns, f.survey_columns)
+        elif sheet == "choices":
+            unchanged, added, removed = Form.detectChanges(self._choices_columns, f.choices_columns)
 
          # Detect modified items (based on shared prefix)
         modified = []
         thres = 0.5
         for removed_item in removed[:]:
-            if any(word in removed_item for word in self.survey_lang_columns): 
-                rsplit = removed_item.split("::")
-                for added_item in added[:]:
-                        asplit = added_item.split("::")
-                        if (rsplit[0] == asplit[0]):
-                            if len(rsplit) > 1 and len(asplit) > 1:
-                                d = Form.get_normalized_edit_distance(rsplit[1],asplit[1])
-                                if d < thres:
-                                    modified.append((removed_item, added_item))
-                                    removed.remove(removed_item)
-                                    added.remove(added_item)
-                            break
+            #if any(word in removed_item for word in self.survey_lang_columns): 
+            rsplit = removed_item.split("::")
+            for added_item in added[:]:
+                    asplit = added_item.split("::")
+                    if (rsplit[0] == asplit[0]):
+                        if len(rsplit) > 1 and len(asplit) > 1:
+                            d = Form.get_normalized_edit_distance(rsplit[1].strip(),asplit[1].strip())
+                            if d > 0 and d < thres:
+                                modified.append((removed_item, added_item))
+                                removed.remove(removed_item)
+                                added.remove(added_item)
+                        break
 
         if modified == []:
             return pd.DataFrame({
@@ -677,7 +681,7 @@ class Form:
 
         out = out.reset_index(drop = True)
         out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
-        out["label_mod"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"], s2 = row["label_y"]), 2), axis = 1)
+        out["label_mod"] = out.apply(lambda row: round(Form.get_normalized_edit_distance(s1 = row["label_x"].lower(), s2 = row["label_y"].lower()), 2), axis = 1)
         mod_columns = {
             "logic_mod": ("relevant_x", "relevant_y"),
             "calc_mod": ("calculation_x", "calculation_y"),
