@@ -60,13 +60,19 @@ conda activate formcompareenv
 pip install -r requirements.txt
 ```
 
-If you get an error prompring you to modify pip, run the following modified command instead:
+If you get an error prompring you to modify `pip`, run the following modified command instead:
 
 ```bash
 python -m pip install -r requirements.txt
 ```
 
-After installation, you should be ready to run the code.
+4. Once installation is complete, the functions within the `Form` and `FormComparator` classes should be ready for use.
+
+If any packages still appear to be missing when you run the code, you can install them manually as needed using `pip`.
+
+```bash
+pip install package_name
+```
 
 ## Usage
 
