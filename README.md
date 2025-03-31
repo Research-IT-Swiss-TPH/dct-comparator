@@ -47,7 +47,7 @@ cd <repository_folder>
 
 [How to clone using the webbrowser](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
 
-2. Create a virtual environment (recommended), for instance with Conda:
+2. Create a virtual environment (recommended), for instance with conda in Anaconda prompt:
 
 ```bash
 conda create -n formcompareenv python=3.13.2
@@ -58,6 +58,12 @@ conda activate formcompareenv
 
 ```bash
 pip install -r requirements.txt
+```
+
+If you get an error prompring you to modify pip, run the following modified command instead:
+
+```bash
+python -m pip install -r requirements.txt
 ```
 
 After installation, you should be ready to run the code.
