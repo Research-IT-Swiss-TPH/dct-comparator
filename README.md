@@ -81,7 +81,7 @@ import os
 import Form as form
 
 # Set the root path where your XLSForm files are stored
-root = "data"  # or any path to your XLSForms
+root = "inputs"  # or any path to your XLSForms
 
 # Define file paths
 f2016_xlsx = os.path.join(root, "WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx")
@@ -106,7 +106,7 @@ import os
 import FormComparator as comp
 
 # Set the root path where your XLSForm files are stored
-root = "data"  # or any path to your XLSForms
+root = "inputs"  # or any path to your XLSForms
 
 # Define file paths
 f2016_xlsx = os.path.join(root, "WHOVA2016_v1_5_3_XLS_form_for_ODK.xlsx")
