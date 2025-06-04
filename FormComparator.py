@@ -65,10 +65,10 @@ class FormComparator:
         # Generate summary DataFrame
         self._generic_df = pd.DataFrame({
             "Comparison Type": [
-                '=HYPERLINK("#\'📋 survey_columns\'!A1", "📋 Survey column names")',
-                '=HYPERLINK("#\'📋 survey_groups_repeats\'!A1", "📋 Survey group names")',
-                '=HYPERLINK("#\'📋 survey_groups_repeats\'!A1", "📋 Survey repeat names")',
-                '=HYPERLINK("#\'📋 survey_questions\'!A1", "📋 Survey question names")',
+                '=HYPERLINK("#\'📋 survey columns\'!A1", "📋 Survey column names")',
+                '=HYPERLINK("#\'📋 survey groups repeats\'!A1", "📋 Survey group names")',
+                '=HYPERLINK("#\'📋 survey groups repeats\'!A1", "📋 Survey repeat names")',
+                '=HYPERLINK("#\'📋 survey questions\'!A1", "📋 Survey question names")',
                 '=HYPERLINK("#\'🔘 choices\'!A1", "🔘 Choices list names")',
                 '=HYPERLINK("#\'🔘 choices\'!A1", "🔘 Choices names")',
                 '=HYPERLINK("#\'⚙️ settings\'!A1", "⚙️ Settings")'],
