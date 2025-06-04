@@ -141,6 +141,7 @@ class Form:
         self._default_language        = self._settings_df.get("default_language", [None])[0]
         self._style                   = self._settings_df.get("style", [None])[0]
         self._label                   = "::".join(x for x in ["label", self._default_language] if x)
+        self._const_msg               = "::".join(x for x in ["constraint_message", self._default_language] if x)
 
         # Security & submission settings
         self._public_key              = self._settings_df.get("public_key", [None])[0]
@@ -199,7 +200,7 @@ class Form:
         self._notes = questions[questions["type"] == "note"]
         # Define mandatory and optional columns
         mandatory_columns = ["index", "group_id", "type", "name", self._label]
-        self._optional_columns = ["relevant", "calculation","required", "choice_filter", "constraint"]
+        self._optional_columns = ["relevant", "calculation","required", "choice_filter", "constraint", self._const_msg]
 
         # Combine for desired columns list
         desired_columns = mandatory_columns + self._optional_columns
@@ -305,6 +306,10 @@ class Form:
     @property
     def main_label(self):
         return self._label
+
+    @property
+    def const_msg(self):
+        return self._const_msg
     
     @property
     def questions(self):
@@ -486,7 +491,9 @@ class Form:
         out["group_id"] = out["current_group_id"].fillna(out["reference_group_id"])
         out = out.sort_values(by=["group_id"], ascending=[True])
 
-        return out[["name", "status", "current_type", "current_group_id", "reference_group_id", "current_parent", "reference_parent", "current_depth", "reference_depth", "current_order", "reference_order"]]
+        return out[["name", "status", "current_type",
+                   "current_group_id", "reference_group_id", "current_parent", "reference_parent",
+                   "current_depth", "reference_depth", "current_order", "reference_order"]]
 
     def detectGroups(self, f, status):
 
@@ -642,12 +649,13 @@ class Form:
         base_columns = ["group_name", "name", "status", "type", "order"]
 
         # Dynamically gather optional columns from unchanged_df (if it exists)
-        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod",
+        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "const_msg_mod", "group_mod",
                             "current_label", "reference_label",
                             "current_relevant", "reference_relevant",
                             "current_calculation", "reference_calculation",
                             "current_required", "reference_required",
                             "current_filter", "reference_filter",
+                            "current_constraint_message", "reference_constraint_message",
                             "reference_group_name"]
 
         # Extract columns that exist in the DataFrame
@@ -662,8 +670,10 @@ class Form:
 
     def detectUnchangedQuestions(self, f):
 
-        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.questions.rename(columns = {f.main_label: "label"}),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label",
+                                                                self._const_msg: "constraint_message"}),
+                       right = f.questions.rename(columns = {f.main_label: "label",
+                                                             f._const_msg: "constraint_message"}),
                        on = "name",
                        how = 'outer')
         out = out[out["label_x"].notnull() & out["label_y"].notnull()]
@@ -686,7 +696,9 @@ class Form:
             "logic_mod": ("relevant_x", "relevant_y"),
             "calc_mod": ("calculation_x", "calculation_y"),
             "required_mod": ("required_x", "required_y"),
-            "filter_mod": ("choice_filter_x", "choice_filter_y")
+            "filter_mod": ("choice_filter_x", "choice_filter_y"),
+            "const_mod": ("constraint_x", "constraint_y"),
+            "const_msg_mod": ("constraint_message_x", "constraint_message_y"),
         }
         mod_columns = {
             new_col: (col_x, col_y)
@@ -712,7 +724,7 @@ class Form:
             "order", "name", "type_y", "label_x", "label_y", "group_id_x", "group_id_y",
             "relevant_x", "relevant_y", "calculation_x", "calculation_y",
             "required_x", "required_y", "choice_filter_x", "choice_filter_y",
-            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "group_mod"
+            "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "const_mod", "const_msg_mod", "group_mod"
         ]
         # Filter to only columns that actually exist
         final_columns = [col for col in final_columns if col in out.columns]
@@ -729,6 +741,8 @@ class Form:
             "required_y": "reference_required",
             "choice_filter_x": "current_filter",
             "choice_filter_y": "reference_filter",
+            "constraint_message_x": "current_constraint_message",
+            "constraint_message_y": "reference_constraint_message",
             "group_id_x": "group_name",
             "group_id_y": "reference_group_name"
         }
@@ -739,8 +753,10 @@ class Form:
 
     def detectAddedQuestions(self, f):
 
-        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.questions.rename(columns = {f.main_label: "label"}),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label",
+                                                                self._const_msg: "constraint_message"}),
+                       right = f.questions.rename(columns = {f.main_label: "label",
+                                                             f._const_msg: "constraint_message"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].notnull() & out["type_y"].isnull()]
@@ -748,34 +764,13 @@ class Form:
         if (out.shape[0] == 0):
             out = None
 
-        # if out is not None:
-        #     tmp = f.questions.copy(deep=True)
-        #     tmp = tmp[tmp[f.main_label].notnull()]
-        #     out = skrub.fuzzy_join(out[["row", "name", "label"]],
-        #                            tmp[["index", "name", f.main_label]],
-        #                            left_on='label',
-        #                            right_on=f.main_label,
-        #                            how='left',
-        #                            match_score=0,
-        #                            return_score=True)
-        #     out = out[["row",
-        #                "name_x",
-        #                "label",
-        #                "name_y",
-        #                f.main_label,
-        #                "matching_score"]] \
-        #                 .rename(columns = {"name_x": "name",
-        #                                    "name_y": "name_of_closest_lbl",
-        #                                    f.main_label: "closest_lbl"}) \
-        #                 .fillna("") \
-        #                 .reset_index(drop=True)
-
         else:
             out = out.reset_index(drop = True)
             out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
             out = out[[
                 "order", "name", "type_y", "label_x", "label_y", "group_id_x",
-                "relevant_x", "relevant_y", "calculation_x", "calculation_y"
+                "relevant_x", "relevant_y", "calculation_x", "calculation_y",
+                "constraint_message_x", "constraint_message_y"
             ]].rename(columns={
                 "type_y": "type",
                 'label_x': 'current_label',
@@ -784,18 +779,24 @@ class Form:
                 "relevant_y": "reference_relevant",
                 "calculation_x": "current_calculation",
                 "calculation_y": "reference_calculation",
+                "constraint_message_x": "current_constraint_message",
+                "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
             out["status"] = "added"
             out["label_mod"] = 0
             out["logic_mod"] = 0
             out["calc_mod"] = 0
+            out["const_mod"] = 0
+            out["const_msg_mod"] = 0
             
         return out
     
     def detectDeletedQuestions(self, f):
 
-        out = pd.merge(left = self._questions.rename(columns = {self._label: "label"}),
-                       right = f.questions.rename(columns = {f.main_label: "label"}),
+        out = pd.merge(left = self._questions.rename(columns = {self._label: "label",
+                                                                self._const_msg: "constraint_message"}),
+                       right = f.questions.rename(columns = {f.main_label: "label",
+                                                             f._const_msg: "constraint_message"}),
                        on = "name",
                        how = 'outer')
         out = out[out["type_x"].isnull() & out["type_y"].notnull()]
@@ -803,19 +804,12 @@ class Form:
         if (out.shape[0] == 0):
             out = None
         else:
-            # tmp = self._questions.copy(deep=True)
-            # tmp = tmp[tmp[self._label].notnull()]
-            # out = skrub.fuzzy_join(out[["row", "name", "label"]],
-            #                        tmp[["index", "name", self._label]],
-            #                        left_on='label',
-            #                        right_on=self._label,
-            #                        drop_unmatched = False,
-            #                        add_match_info = True)
             out = out.reset_index(drop = True)
             out["order"] = out.apply(lambda row: round(np.nanmean([row["index_x"], row["index_y"]]), 1), axis = 1)
             out = out[[
                 "order", "name", "type_y", "label_x", "label_y", "group_id_x",
-                "relevant_x", "relevant_y", "calculation_x", "calculation_y"
+                "relevant_x", "relevant_y", "calculation_x", "calculation_y",
+                "constraint_message_x", "constraint_message_y"
             ]].rename(columns={
                 "type_y": "type",
                 'label_x': 'current_label',
@@ -824,27 +818,16 @@ class Form:
                 "relevant_y": "reference_relevant",
                 "calculation_x": "current_calculation",
                 "calculation_y": "reference_calculation",
+                "constraint_message_x": "current_constraint_message",
+                "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
             out["status"] = "removed"
             out["label_mod"] = 0
             out["label_mod"] = 0
             out["logic_mod"] = 0
             out["calc_mod"] = 0
-
-            """ 
-            print (out)
-            out = out[["row",
-                       "name_x",
-                      "label",
-                      "name_y",
-                      self._label,
-                      "matching_score"]] \
-                      .rename(columns = {"name_x": "name",
-                                         "name_y": "name_of_closest_lbl",
-                                         self._label: "closest_lbl"}) \
-                      .fillna("") \
-                      .reset_index(drop=True)
-            """
+            out["const_mod"] = 0
+            out["const_msg_mod"] = 0
 
         return out
     
