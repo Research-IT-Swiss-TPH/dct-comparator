@@ -649,12 +649,13 @@ class Form:
         base_columns = ["group_name", "name", "status", "type", "order"]
 
         # Dynamically gather optional columns from unchanged_df (if it exists)
-        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "const_msg_mod", "group_mod",
+        optional_prefixes = ["label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "const_mod", "const_msg_mod", "group_mod",
                             "current_label", "reference_label",
                             "current_relevant", "reference_relevant",
                             "current_calculation", "reference_calculation",
                             "current_required", "reference_required",
                             "current_filter", "reference_filter",
+                            "current_constraint", "reference_constraint",
                             "current_constraint_message", "reference_constraint_message",
                             "reference_group_name"]
 
@@ -724,6 +725,7 @@ class Form:
             "order", "name", "type_y", "label_x", "label_y", "group_id_x", "group_id_y",
             "relevant_x", "relevant_y", "calculation_x", "calculation_y",
             "required_x", "required_y", "choice_filter_x", "choice_filter_y",
+            "constraint_x", "constraint_y", "constraint_message_x", "constraint_message_y",
             "status", "label_mod", "logic_mod", "calc_mod", "required_mod", "filter_mod", "const_mod", "const_msg_mod", "group_mod"
         ]
         # Filter to only columns that actually exist
@@ -741,6 +743,8 @@ class Form:
             "required_y": "reference_required",
             "choice_filter_x": "current_filter",
             "choice_filter_y": "reference_filter",
+            "constraint_x": "current_constraint",
+            "constraint_y": "reference_constraint",
             "constraint_message_x": "current_constraint_message",
             "constraint_message_y": "reference_constraint_message",
             "group_id_x": "group_name",
@@ -779,6 +783,8 @@ class Form:
                 "relevant_y": "reference_relevant",
                 "calculation_x": "current_calculation",
                 "calculation_y": "reference_calculation",
+                "constraint_x": "current_constraint",
+                "constraint_y": "reference_constraint",
                 "constraint_message_x": "current_constraint_message",
                 "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
@@ -815,6 +821,8 @@ class Form:
                 "relevant_y": "reference_relevant",
                 "calculation_x": "current_calculation",
                 "calculation_y": "reference_calculation",
+                "constraint_x": "current_constraint",
+                "constraint_y": "reference_constraint",
                 "constraint_message_x": "current_constraint_message",
                 "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
