@@ -783,11 +783,8 @@ class Form:
                 "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
             out["status"] = "added"
-            out["label_mod"] = 0
-            out["logic_mod"] = 0
-            out["calc_mod"] = 0
-            out["const_mod"] = 0
-            out["const_msg_mod"] = 0
+            for k in ["label_mod", "logic_mod", "calc_mod", "required_mod", "const_mod", "const_msg_mod", "group_mod"]:
+                out[k] = 0
             
         return out
     
@@ -822,12 +819,8 @@ class Form:
                 "constraint_message_y": "reference_constraint_message",
                 'group_id_x': 'group_name'})
             out["status"] = "removed"
-            out["label_mod"] = 0
-            out["label_mod"] = 0
-            out["logic_mod"] = 0
-            out["calc_mod"] = 0
-            out["const_mod"] = 0
-            out["const_msg_mod"] = 0
+            for k in ["label_mod", "logic_mod", "calc_mod", "required_mod", "const_mod", "const_msg_mod", "group_mod"]:
+                out[k] = 0
 
         return out
     
