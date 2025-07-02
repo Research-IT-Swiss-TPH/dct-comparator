@@ -2,19 +2,19 @@
 
 ## Overview
 
-Data collection tools often require regular updates to a master version as well as sometimes additionally localized adaptations to meet specific regional or local needs. However, tracking changes across different master (and child) versions is a complex and time-consuming process. To simplify this, **DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm data collection tools, such as the WHO verbal autopsy, which is implemented in many countries.
+Data collection tools often require regular updates to a *master* version as well as *localized adaptations* to meet specific regional or local needs. However, tracking changes across different master (and child) versions is a complex and time-consuming process. To simplify this, **DCT comparator** is a Python project designed to facilitate the analysis and comparison of XLSForm data collection tools, such as the WHO Verbal Autopsy (VA), which has been implemented in 20+ countries.
 
-The solution includes the development of a Python class designed to represents an XLSForm and provides class methods for 1-to-1 comparisons of ODK forms from a functional perspective. A step-by-step Jupyter Notebook is also available to demonstrate how to use the class for comparing two forms. The workflow generates an Excel file with multiple tabs, providing a detailed comparison of XLSForms with functional differences across various components using color scales. 
+The solution includes the development of a Python class designed to represents an XLSForm and provides class methods for 1-to-1 comparisons of ODK forms from a functional perspective. A step-by-step Jupyter Notebook is also available to demonstrate how to use the class for comparing two WHO VA forms. The workflow generates an Excel file with several tabs, providing a detailed comparison of XLSForms with functional differences across various groups, questions and choices components using color scales. 
 
 ## Form class features
 
-The Form class represents an XLSForm object and provides various methods to interact with and compare 1-to-1 forms. 
+The `Form` class represents an XLSForm object and provides various methods to interact with and compare 1-to-1 forms. 
 
 Key features of the Form class include:
 
 * **Initialization**: initialize a Form object by providing the path to the XLSForm spreadsheet file.
 * **Retrieve form general information**: access form-related information such as the form's unique identifier, title, version, default language, and survey type.
-* **Retrieve questions**: obtain a dataframe containing the survey questions, including attributes like question type, label, and group information.
+* **Retrieve questions**: obtain a dataframe containing the survey questions, including attributes like question type, label, relevance, constraint, and group information.
 
 FormComparator
 * **Comparison**: compare 2 Form objects to detect differences in form ID, version, and default language. Additionally, identify added, deleted, modified questions, and similar labels between two forms. Return an excel summary of the detected differences.
@@ -32,7 +32,7 @@ The project requires **Python 3.13.2** to work and relies in particular on the f
 
 Make sure to install these dependencies before using this code.
 
-A file `requirements.txt` is also available.
+A file `requirements.txt` is available to streamline the installation of dependencies.
 
 ## Installation
 
@@ -76,7 +76,7 @@ pip install package_name
 
 ## Usage
 
-After installing the dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. 
+After installing the environment and dependencies, you can use the form comparison tool via a Jupyter Notebook or a Python script. 
 
 ### Extract and manipulate XLSForm information
 
@@ -154,5 +154,6 @@ The project is open-sourced, with all code shared on GitHub under an MIT license
 ## Changelog
 
 Version | Description
-------- | --------------------
+------- | ---------------------------------------------------------------------
 v1.0.0  | First release
+v1.1.0  | Fix hyperlinks + add comparison of constraints / constraint messages
