@@ -1,4 +1,4 @@
-# Data Collection Tool (DCT) comparator
+# 1-by-1 ODK form comparator
 
 ## Overview
 
