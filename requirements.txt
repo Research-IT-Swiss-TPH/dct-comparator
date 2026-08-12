@@ -53,7 +53,7 @@ Levenshtein==0.26.1
 MarkupSafe==3.0.2
 matplotlib==3.10.1
 matplotlib-inline==0.1.6
-mistune==3.1.2
+mistune==3.3.0
 nbclient==0.10.2
 nbconvert==7.17.0
 nbformat==5.10.4
